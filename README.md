@@ -334,6 +334,26 @@ make paper
 
 ---
 
+## 🧠 Research RAG System for AI Agents
+
+ATLAS includes an embedded, zero-overhead Research RAG system located in [`rag/`](rag/) tailored for automated AI coding agents and researchers:
+
+```bash
+# Query any theorem, mathematical bound, JAX symbol, or run metric:
+python3 -m rag.search "minimax allocation rate"
+
+# Filter by theory proof, code, paper, runs, or skills:
+python3 -m rag.search "alloc_lower_bound" --type proof
+python3 -m rag.search "sharpness inflation factor" --type runs
+python3 -m rag.search "HermiteTaylorReconstruction" --type code
+
+# Rebuild the index after modifying files (<0.2s):
+make rag-index
+```
+See the [`rag/README.md`](rag/README.md) for full agent protocols and programmatic Python APIs.
+
+---
+
 ## 📑 Citation
 
 If you find ATLAS helpful in your research or industrial diagnostics, please cite:

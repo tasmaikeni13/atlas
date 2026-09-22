@@ -6,6 +6,9 @@ __pycache__/
 .venv/
 dist/
 build/
+rag/*.db
+rag/*.db-journal
+
 
 # Heavy dataset files and trajectories exceeding GitHub 100MB limit
 data/

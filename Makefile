@@ -56,6 +56,13 @@ proofs:
 example:
 	$(TPU_ENV) $(PY) examples/quickstart.py
 
+rag-index:
+	$(PY) -m rag.index
+
+rag-test:
+	$(PY) -m unittest rag/tests/test_rag.py
+
 clean:
 	rm -rf __pycache__ */__pycache__ */*/__pycache__
 	cd paper && rm -f atlas.aux atlas.bbl atlas.blg atlas.log atlas.out
+
