@@ -1,0 +1,42 @@
+{
+  "model": "VisionTransformerImageNet",
+  "parameters": 5543716,
+  "seed": 42,
+  "ground_truth_relief": 0.016214370727539062,
+  "runs": [
+    {
+      "budget": 2.0,
+      "seed": 42,
+      "atlas": {
+        "l2_error": 0.0005082493584504792,
+        "spearman": 0.7154949041326237,
+        "curv_error": 1.0617176294326782,
+        "time": 0.5367989859951194
+      },
+      "grid": {
+        "l2_error": 0.000498779241956764,
+        "spearman": 0.7266147087655442,
+        "time": 0.05697460600640625
+      },
+      "random_slice": {
+        "l2_error": 0.0012417536927387118,
+        "spearman": 0.3604029277995467,
+        "time": 6.681241204001708
+      },
+      "lanczos": {
+        "lambda_max": 103.09962778148451,
+        "lambda_min": -150.7942350312049,
+        "time": 126.68757408700185
+      },
+      "hutchinson": {
+        "trace": -166.8394775390625,
+        "frobenius": 1730.3835196279465,
+        "time": 122.73709596999106
+      },
+      "finite_difference": {
+        "curvature": -7045.26904296875,
+        "time": 8.324103408987867
+      }
+    }
+  ]
+}

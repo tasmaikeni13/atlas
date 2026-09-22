@@ -101,6 +101,15 @@ class HermiteTaylorReconstruction:
         pt = np.array([[x, y]], dtype=np.float64)
         return float(self.evaluate_batch(pt)[0])
 
+    def query_curvature(self, x: float, y: float) -> float:
+        """Evaluates maximum directional curvature at coordinate (x, y)."""
+        pt = np.array([x, y], dtype=np.float64)
+        dists = np.linalg.norm(self.anchor_coords - pt, axis=1)
+        nearest_idx = int(np.argmin(dists))
+        jet = self.jets[nearest_idx]
+        eigs = np.linalg.eigvalsh(jet.hess)
+        return float(np.max(eigs))
+
     def analyze_geometry(self, grid_X: np.ndarray, grid_Y: np.ndarray) -> SurfaceAnalysis:
         """Extracts key topological metrics (minimum, condition number, relief)."""
         queries = np.column_stack([grid_X.ravel(), grid_Y.ravel()])

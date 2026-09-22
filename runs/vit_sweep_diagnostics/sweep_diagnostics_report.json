@@ -1,0 +1,97 @@
+{
+  "trials": [
+    {
+      "trial_id": "trial_lr_low",
+      "config": {
+        "trial_id": "trial_lr_low",
+        "lr": 0.0001,
+        "weight_decay": 0.01
+      },
+      "diagnostics": {
+        "loss": 6.192614555358887,
+        "grad_norm": 1.1351240873336792,
+        "lambda_max": 10.306316375732422,
+        "lambda_min": -1.9730366468429565,
+        "condition_number": 5.2235808149957546,
+        "anisotropy_ratio": 1.47353184125163,
+        "flatness_radius": 0.13930389601887233,
+        "eos_margin": 1940.5575446036794,
+        "stochastic_snr": 5154.026774580472,
+        "stability_verdict": "SLUGGISH_UNDERFIT",
+        "recommended_lr": 0.14554181584527595,
+        "recommended_weight_decay": 0.01,
+        "recommended_batch_scale": 0.5,
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 1940.56 >> 2.0). Landscape can tolerate up to 1.5e-01 with lambda_max = 10.3063. High gradient SNR (5154.0). Batch size can be halved to economize TPU compute without loss."
+      }
+    },
+    {
+      "trial_id": "trial_lr_mid",
+      "config": {
+        "trial_id": "trial_lr_mid",
+        "lr": 0.0005,
+        "weight_decay": 0.05
+      },
+      "diagnostics": {
+        "loss": 5.272987365722656,
+        "grad_norm": 0.8952057957649231,
+        "lambda_max": 0.1054835245013237,
+        "lambda_min": -0.3237251043319702,
+        "condition_number": 0.32584289290444884,
+        "anisotropy_ratio": 1.9666675303869956,
+        "flatness_radius": 1.3769643032512093,
+        "eos_margin": 37920.61384856177,
+        "stochastic_snr": 3205.5736670844367,
+        "stability_verdict": "SLUGGISH_UNDERFIT",
+        "recommended_lr": 14.22023019321066,
+        "recommended_weight_decay": 0.05,
+        "recommended_batch_scale": 0.5,
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 37920.61 >> 2.0). Landscape can tolerate up to 1.4e+01 with lambda_max = 0.1055. High gradient SNR (3205.6). Batch size can be halved to economize TPU compute without loss."
+      }
+    },
+    {
+      "trial_id": "trial_lr_high",
+      "config": {
+        "trial_id": "trial_lr_high",
+        "lr": 0.003,
+        "weight_decay": 0.01
+      },
+      "diagnostics": {
+        "loss": 6.168158054351807,
+        "grad_norm": 0.3126305341720581,
+        "lambda_max": 0.002935925265774131,
+        "lambda_min": -0.018779883161187172,
+        "condition_number": 0.1563335213843011,
+        "anisotropy_ratio": 1.3706050325498664,
+        "flatness_radius": 8.253582555821408,
+        "eos_margin": 227072.08335253148,
+        "stochastic_snr": 390.95140358682556,
+        "stability_verdict": "SLUGGISH_UNDERFIT",
+        "recommended_lr": 510.91218754319584,
+        "recommended_weight_decay": 0.01,
+        "recommended_batch_scale": 0.5,
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 227072.08 >> 2.0). Landscape can tolerate up to 5.1e+02 with lambda_max = 0.0029. High gradient SNR (391.0). Batch size can be halved to economize TPU compute without loss."
+      }
+    }
+  ],
+  "recommendations": {
+    "best_trial_id": "trial_lr_high",
+    "best_hparams": {
+      "trial_id": "trial_lr_high",
+      "lr": 0.003,
+      "weight_decay": 0.01
+    },
+    "best_eval_metric": 5.127343654632568,
+    "landscape_diagnosis": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 227072.08 >> 2.0). Landscape can tolerate up to 5.1e+02 with lambda_max = 0.0029. High gradient SNR (391.0). Batch size can be halved to economize TPU compute without loss.",
+    "refined_learning_rates": [
+      255.45609377159792,
+      510.91218754319584,
+      766.3682813147938
+    ],
+    "refined_weight_decays": [
+      0.005,
+      0.01,
+      0.02
+    ],
+    "batch_scale_factor": 0.5
+  }
+}

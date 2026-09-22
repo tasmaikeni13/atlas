@@ -4,9 +4,30 @@
 PY := python3 -W ignore
 TPU_ENV := TPU_CHIPS_PER_HOST_BOUNDS="2,2,1" TPU_HOST_BOUNDS="1,1,1"
 
-.PHONY: all train benchmark sharpness render paper proofs example clean
+.PHONY: all train benchmark sharpness render paper proofs example clean smoke_125m train_125m benchmark_125m smoke_vit train_vit_imagenet sweep_vit benchmark_vit
 
 all: train benchmark sharpness render paper proofs
+
+smoke_125m:
+	$(TPU_ENV) $(PY) test_125m_smoke.py
+
+train_125m:
+	$(TPU_ENV) $(PY) experiments/05_train_125m_fineweb.py
+
+benchmark_125m:
+	$(TPU_ENV) $(PY) experiments/06_benchmark_125m_all_methods.py
+
+smoke_vit:
+	$(TPU_ENV) $(PY) test_vit_imagenet_smoke.py
+
+train_vit_imagenet:
+	$(TPU_ENV) $(PY) experiments/07_train_vit_imagenet100.py
+
+sweep_vit:
+	$(TPU_ENV) $(PY) experiments/08_vit_sweep_diagnostics.py
+
+benchmark_vit:
+	$(TPU_ENV) $(PY) experiments/09_benchmark_vit_all_methods.py
 
 train:
 	$(TPU_ENV) $(PY) experiments/01_train_vit.py

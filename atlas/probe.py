@@ -22,6 +22,11 @@ class Jet:
     hess: np.ndarray  # shape (2, 2)
     variance: float = 0.0
 
+    @property
+    def hessian(self) -> np.ndarray:
+        """Alias for hess (projected 2x2 Hessian matrix)."""
+        return self.hess
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "x": float(self.x),
@@ -79,30 +84,61 @@ class JetProbe:
         origin = self.basis.origin
         meta = self.basis.meta
 
-        # Define 2D loss function on TPU
-        def loss_2d(coords: jnp.ndarray, batch: Any) -> jnp.ndarray:
-            x, y = coords[0], coords[1]
-            flat_theta = origin + x * u + y * v
-            params = unflatten_params(flat_theta, meta)
-            logits = apply_fn(params, batch)
-            return loss_fn(logits, batch)
+        u_tree = unflatten_params(u, meta)
+        v_tree = unflatten_params(v, meta)
+        origin_tree = unflatten_params(origin, meta)
 
-        self._loss_2d = loss_2d
+        def total_loss(p: Any, b: Any) -> jnp.ndarray:
+            logits = apply_fn(p, b)
+            return loss_fn(logits, b)
+
+        def tree_dot(t1: Any, t2: Any) -> jnp.ndarray:
+            leaves1 = jax.tree_util.tree_leaves(t1)
+            leaves2 = jax.tree_util.tree_leaves(t2)
+            dots = [jnp.sum(l1 * l2) for l1, l2 in zip(leaves1, leaves2)]
+            return sum(dots)
+
+        def get_params(coords: jnp.ndarray) -> Any:
+            x, y = coords[0], coords[1]
+            return jax.tree_util.tree_map(
+                lambda p0, ul, vl: p0 + x * ul + y * vl,
+                origin_tree, u_tree, v_tree
+            )
 
         # JIT-compiled exact Jet evaluator
         @jax.jit
         def _jet_step(coords: jnp.ndarray, batch: Any) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-            loss = loss_2d(coords, batch)
-            grad = jax.grad(loss_2d, argnums=0)(coords, batch)
-            hess = jax.hessian(loss_2d, argnums=0)(coords, batch)
-            return loss, grad, hess
+            p_tree = get_params(coords)
+            
+            # Forward-backward pass: scalar loss and full gradient
+            loss, grad_tree = jax.value_and_grad(total_loss)(p_tree, batch)
+
+            # Projected 2D gradient: <grad, u> and <grad, v>
+            gx = tree_dot(grad_tree, u_tree)
+            gy = tree_dot(grad_tree, v_tree)
+            grad_2d = jnp.array([gx, gy], dtype=jnp.float32)
+
+            # Exact 2D projected Hessian via two JVP passes (Pearlmutter 1994)
+            def grad_fn(p):
+                return jax.grad(total_loss)(p, batch)
+
+            _, hvp_u = jax.jvp(grad_fn, (p_tree,), (u_tree,))
+            _, hvp_v = jax.jvp(grad_fn, (p_tree,), (v_tree,))
+
+            h00 = tree_dot(hvp_u, u_tree)
+            h01 = tree_dot(hvp_u, v_tree)
+            h11 = tree_dot(hvp_v, v_tree)
+            hess_2d = jnp.array([[h00, h01], [h01, h11]], dtype=jnp.float32)
+
+            return loss, grad_2d, hess_2d
 
         self._jit_jet = _jet_step
 
         # JIT-compiled loss-only evaluator for quick point queries
         @jax.jit
         def _loss_step(coords: jnp.ndarray, batch: Any) -> jnp.ndarray:
-            return loss_2d(coords, batch)
+            p_tree = get_params(coords)
+            return total_loss(p_tree, batch)
 
         self._jit_loss = _loss_step
 

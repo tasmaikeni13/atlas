@@ -81,6 +81,18 @@ class AtlasRecorder:
         self._step_counter = 0
         self._meta: Any = None
 
+    @property
+    def snapshots(self) -> List[np.ndarray]:
+        return self._snapshots
+
+    @property
+    def grads(self) -> List[np.ndarray]:
+        return self._grads
+
+    @property
+    def losses(self) -> List[float]:
+        return self._losses
+
     def step(self, params: Any, grad: Optional[Any] = None, loss: Optional[float] = None) -> None:
         """Records a parameter snapshot if the step stride matches."""
         self._step_counter += 1

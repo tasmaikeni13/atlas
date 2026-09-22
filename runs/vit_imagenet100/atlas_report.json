@@ -1,0 +1,51 @@
+{
+  "figure_2d": "runs/vit_imagenet100/landscape_2d.png",
+  "figure_3d": "runs/vit_imagenet100/landscape_3d.png",
+  "animation": "runs/vit_imagenet100/trajectory_evolution.gif",
+  "certificate_plot": "runs/vit_imagenet100/certificate_plot.png",
+  "certificate": {
+    "num_cert_points": 14,
+    "mae": 0.01207912372005777,
+    "rmse": 0.017844094774327763,
+    "max_error": 0.04703449770711643,
+    "q95_error": 0.03643338749829321,
+    "q95_upper_bound": 0.04703449770711643,
+    "confidence_level": 0.95,
+    "surface_relief": 2.009372071912826,
+    "relative_q95_error_pct": 2.3407560184879967,
+    "certified_valid": true
+  },
+  "allocation": {
+    "n_total": 80,
+    "n_est": 66,
+    "n_cert": 14,
+    "batch_size": 2048,
+    "budget_seconds": 2.0,
+    "expected_error": 0.007104366672605595,
+    "c_ratio": 0.0944976322112157
+  },
+  "analysis": {
+    "min_coord": [
+      1.7417830228805542,
+      0.0416666679084301
+    ],
+    "min_loss": 4.472753823587374,
+    "origin_loss": 5.118552684778817,
+    "origin_curvature_eigs": [
+      0.14286772906780243,
+      -0.2155473232269287
+    ],
+    "origin_condition_number": 0.6628137474822221,
+    "flatness_index": -0.07267959415912628,
+    "surface_relief": 2.009372071912826
+  },
+  "cost_model": {
+    "tau": 0.00019624500697397663,
+    "kappa": 1e-08,
+    "sigma2": 0.06834498940958156,
+    "m3": 0.2268981635570526,
+    "loss_relief": 0.6017465591430664
+  },
+  "budget_seconds": 2.0,
+  "elapsed_seconds": 180.77583867299836
+}

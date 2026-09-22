@@ -9,8 +9,7 @@ build/
 
 # Heavy dataset files and trajectories exceeding GitHub 100MB limit
 data/
-runs/vit/*.npz
-runs/transformer/*.npz
+*.npz
 runs/cnn/
 runs/gpt/
 runs/*.log
