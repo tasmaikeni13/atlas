@@ -6,7 +6,7 @@
     "1": {
       "id": 1,
       "name": "Mathematical Foundations, Minimax Budget Bounds & Lean 4 Formal Verification",
-      "file": "phases/01_mathematical_foundations_and_formal_proofs.md",
+      "file": "phases/phase1.md",
       "status": "COMPLETED",
       "dependencies": [],
       "verification_command": "test -f proofs/AtlasCert/AtlasCert/Certificates.lean",
@@ -22,7 +22,7 @@
     "2": {
       "id": 2,
       "name": "Monte Carlo Variance Analysis, Statistical Error Certificates & Peer Domination Proofs",
-      "file": "phases/02_monte_carlo_statistical_bounds_and_peer_analysis.md",
+      "file": "phases/phase2.md",
       "status": "COMPLETED",
       "dependencies": [
         1
@@ -42,7 +42,7 @@
     "3": {
       "id": 3,
       "name": "Hardware Pod Architecture, TPU/GPU Compilation & Diagnostic Kernel Suite",
-      "file": "phases/03_hardware_pod_profiling_and_kernel_implementations.md",
+      "file": "phases/phase3.md",
       "status": "COMPLETED",
       "dependencies": [
         1
@@ -63,7 +63,7 @@
     "4": {
       "id": 4,
       "name": "Frontier Architectures (125M FineWeb-Edu Transformer & ViT ImageNet-100) & Live Recording Pipeline",
-      "file": "phases/04_transformer_and_vision_architecture_integration.md",
+      "file": "phases/phase4.md",
       "status": "COMPLETED",
       "dependencies": [
         3
@@ -85,7 +85,7 @@
     "5": {
       "id": 5,
       "name": "Loss Landscape Geometry Diagnostics, Edge-of-Stability Margin & Automated Hyperparameter Advisor",
-      "file": "phases/05_landscape_guided_optimization_and_sweep_advisor.md",
+      "file": "phases/phase5.md",
       "status": "COMPLETED",
       "dependencies": [
         2,
@@ -105,7 +105,7 @@
     "6": {
       "id": 6,
       "name": "Large-Scale Competitive Benchmark Suite & Pareto Domination across Wall-Clock Budgets",
-      "file": "phases/06_large_scale_competitive_benchmarks_and_pareto_evaluation.md",
+      "file": "phases/phase6.md",
       "status": "COMPLETED",
       "dependencies": [
         3,
@@ -128,7 +128,7 @@
     "7": {
       "id": 7,
       "name": "Empirical Robustness, Partition of Unity Ablation, Noise Resistance & OOD Generalization Audit",
-      "file": "phases/07_robustness_ablation_and_distribution_free_diagnostics.md",
+      "file": "phases/phase7.md",
       "status": "COMPLETED",
       "dependencies": [
         6
@@ -148,7 +148,7 @@
     "8": {
       "id": 8,
       "name": "Codebase Cleansing, PEP 8 Formatting, Humanized Documentation, LaTeX Paper Compilation & Publication Release",
-      "file": "phases/08_codebase_sanitization_paper_polishing_and_publication.md",
+      "file": "phases/phase8.md",
       "status": "COMPLETED",
       "dependencies": [
         1,
