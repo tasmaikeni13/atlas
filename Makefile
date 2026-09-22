@@ -1,12 +1,13 @@
 # ATLAS: Adaptive Taylor Landscape Analysis System
 # Complete reproduction pipeline on Google Cloud TPU v4.
 
-PY := python3 -W ignore
+VENV_PY := $(shell if [ -f .venv/bin/python ]; then echo ".venv/bin/python"; else echo "python3"; fi)
+PY := $(VENV_PY) -W ignore
 TPU_ENV := TPU_CHIPS_PER_HOST_BOUNDS="2,2,1" TPU_HOST_BOUNDS="1,1,1"
 
-.PHONY: all train benchmark sharpness render paper proofs example clean smoke_125m train_125m benchmark_125m smoke_vit train_vit_imagenet sweep_vit benchmark_vit
+.PHONY: all train benchmark sharpness render paper proofs example clean smoke_125m train_125m benchmark_125m smoke_vit train_vit_imagenet sweep_vit benchmark_vit phases phase-status
 
-all: train benchmark sharpness render paper proofs
+all: train benchmark sharpness render paper proofs phases
 
 smoke_125m:
 	$(TPU_ENV) $(PY) test_125m_smoke.py
@@ -62,7 +63,14 @@ rag-index:
 rag-test:
 	$(PY) -m unittest rag/tests/test_rag.py
 
+phases:
+	$(PY) phases/run_phase.py --all
+
+phase-status:
+	$(PY) phases/run_phase.py --status
+
 clean:
 	rm -rf __pycache__ */__pycache__ */*/__pycache__
 	cd paper && rm -f atlas.aux atlas.bbl atlas.blg atlas.log atlas.out
+
 

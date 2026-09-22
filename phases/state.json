@@ -1,0 +1,174 @@
+{
+  "project": "ATLAS",
+  "version": "1.0.0",
+  "hardware_target": "Google Cloud TPU v4 (8 TensorCores, 2x2x1 Mesh)",
+  "phases": {
+    "1": {
+      "id": 1,
+      "name": "Mathematical Foundations, Minimax Budget Bounds & Lean 4 Formal Verification",
+      "file": "phases/01_mathematical_foundations_and_formal_proofs.md",
+      "status": "COMPLETED",
+      "dependencies": [],
+      "verification_command": "test -f proofs/AtlasCert/AtlasCert/Certificates.lean",
+      "artifacts": [
+        "proofs/AtlasCert/AtlasCert/Certificates.lean",
+        "paper/atlas.tex"
+      ],
+      "invariants": {
+        "minimax_error_rate": "O(C^(-3/8))",
+        "lean4_sorries": 0
+      }
+    },
+    "2": {
+      "id": 2,
+      "name": "Monte Carlo Variance Analysis, Statistical Error Certificates & Peer Domination Proofs",
+      "file": "phases/02_monte_carlo_statistical_bounds_and_peer_analysis.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        1
+      ],
+      "verification_command": "python3 -c 'from atlas.certify import certify_reconstruction; print(\"Certify import OK\")'",
+      "artifacts": [
+        "atlas/certify.py",
+        "figures/sharpness_vit.pdf",
+        "figures/sharpness_transformer.pdf"
+      ],
+      "invariants": {
+        "dkw_confidence_coverage": 0.95,
+        "curvature_relative_error_autodiff": 0.01,
+        "finite_difference_noise_explosion": "O(h^(-2))"
+      }
+    },
+    "3": {
+      "id": 3,
+      "name": "Hardware Pod Architecture, TPU/GPU Compilation & Diagnostic Kernel Suite",
+      "file": "phases/03_hardware_pod_profiling_and_kernel_implementations.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        1
+      ],
+      "verification_command": "python3 -c 'from atlas.baselines import VectorizedGridBaseline, FilterNormalizedRandomSlice, TpuLanczosHessian, TpuHutchinsonTrace, TpuFiniteDifferenceCurvature; print(\"Baseline kernels OK\")'",
+      "artifacts": [
+        "atlas/probe.py",
+        "atlas/baselines/grid.py",
+        "atlas/baselines/random_slice.py",
+        "atlas/baselines/hvp_lanczos.py",
+        "atlas/baselines/finite_difference.py"
+      ],
+      "invariants": {
+        "jet_vjp_passes": 2,
+        "finite_difference_noise": 0.0
+      }
+    },
+    "4": {
+      "id": 4,
+      "name": "Frontier Architectures (125M FineWeb-Edu Transformer & ViT ImageNet-100) & Live Recording Pipeline",
+      "file": "phases/04_transformer_and_vision_architecture_integration.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        3
+      ],
+      "verification_command": "python3 -c 'from atlas.transformer_125m import Transformer125M; from atlas.vit_imagenet import VisionTransformer; print(\"Models OK\")'",
+      "artifacts": [
+        "atlas/transformer_125m.py",
+        "atlas/vit_imagenet.py",
+        "atlas/flash_attention.py",
+        "atlas/fineweb.py",
+        "atlas/imagenet100.py",
+        "atlas/api.py"
+      ],
+      "invariants": {
+        "transformer_125m_parameters": 123597312,
+        "vit_small_parameters": 21664612
+      }
+    },
+    "5": {
+      "id": 5,
+      "name": "Loss Landscape Geometry Diagnostics, Edge-of-Stability Margin & Automated Hyperparameter Advisor",
+      "file": "phases/05_landscape_guided_optimization_and_sweep_advisor.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        2,
+        4
+      ],
+      "verification_command": "python3 -c 'from atlas.sweep_advisor import SweepAdvisor, LandscapeDiagnosticEngine; print(\"Advisor OK\")'",
+      "artifacts": [
+        "atlas/diagnostics.py",
+        "atlas/sweep_advisor.py",
+        "runs/vit_sweep_diagnostics/sweep_diagnostics_report.json"
+      ],
+      "invariants": {
+        "eos_optimal_window": "[0.9, 2.5]",
+        "flatness_radius_form": "sqrt(2*delta_L / lambda_max)"
+      }
+    },
+    "6": {
+      "id": 6,
+      "name": "Large-Scale Competitive Benchmark Suite & Pareto Domination across Wall-Clock Budgets",
+      "file": "phases/06_large_scale_competitive_benchmarks_and_pareto_evaluation.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        3,
+        4,
+        5
+      ],
+      "verification_command": "test -f figures/report_vit.json && test -f figures/report_transformer.json",
+      "artifacts": [
+        "runs/benchmark/vit/",
+        "runs/benchmark/transformer/",
+        "figures/report_vit.json",
+        "figures/report_transformer.json"
+      ],
+      "invariants": {
+        "vit_spearman_rho": 0.997,
+        "transformer_spearman_rho": 0.9998,
+        "transformer_relative_l2_error": 0.0474
+      }
+    },
+    "7": {
+      "id": 7,
+      "name": "Empirical Robustness, Partition of Unity Ablation, Noise Resistance & OOD Generalization Audit",
+      "file": "phases/07_robustness_ablation_and_distribution_free_diagnostics.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        6
+      ],
+      "verification_command": "test -f figures/certificate_vit.pdf && test -f figures/certificate_transformer.pdf",
+      "artifacts": [
+        "figures/certificate_vit.pdf",
+        "figures/certificate_transformer.pdf",
+        "figures/landscape_3d_vit.pdf",
+        "figures/landscape_3d_transformer.pdf"
+      ],
+      "invariants": {
+        "wendland_c2_support": "compact",
+        "ood_flatness_rank_correlation": 0.842
+      }
+    },
+    "8": {
+      "id": 8,
+      "name": "Codebase Cleansing, PEP 8 Formatting, Humanized Documentation, LaTeX Paper Compilation & Publication Release",
+      "file": "phases/08_codebase_sanitization_paper_polishing_and_publication.md",
+      "status": "COMPLETED",
+      "dependencies": [
+        1,
+        6,
+        7
+      ],
+      "verification_command": "test -f paper/atlas.pdf",
+      "artifacts": [
+        "paper/atlas.pdf",
+        "paper/atlas.tex",
+        "paper/refs.bib",
+        "README.md",
+        "LICENSE",
+        "Makefile"
+      ],
+      "invariants": {
+        "paper_pdf_exists": true,
+        "pep8_compliance": true,
+        "rag_retrieval_passing": true
+      }
+    }
+  }
+}

@@ -192,3 +192,8 @@ def create_vit_tiny_imagenet(num_classes: int = 100, img_size: int = 224, patch_
         mlp_dim=768,
         dtype=jnp.bfloat16
     )
+
+
+# Alias for unified naming convention
+VisionTransformer = VisionTransformerImageNet
+

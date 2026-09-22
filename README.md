@@ -354,6 +354,25 @@ See the [`rag/README.md`](rag/README.md) for full agent protocols and programmat
 
 ---
 
+## 🔬 Autonomous Research Phases & Agent Protocol
+
+ATLAS includes an autonomous, self-correcting research protocol located in [`phases/`](phases/) designed for AI agents and human researchers to iteratively discover, prove, implement, benchmark, and publish loss landscape diagnostics:
+
+- **Self-Correcting Loop:** If an experiment, proof, or benchmark misses target thresholds, the agent performs literature search, revises mathematical bounds, reproves theorems in Lean 4, updates JAX/XLA kernels, and iterates until success.
+- **Adaptive Invalidation Engine:** When foundational theorems or cost models change, downstream dependent phases and the theory paper (`paper/atlas.tex`) are automatically re-derived and updated.
+- **Strict Peer Domination:** ATLAS must match or strictly exceed all peer baselines across relative $L_2$ error, Spearman rank correlation $\rho_s$, curvature recovery, and wall-clock latency.
+
+```bash
+# Check phase status and dependency graph:
+make phase-status
+
+# Verify all phases sequentially:
+make phases
+```
+See [`phases/README.md`](phases/README.md) for the complete phase documentation and execution lifecycle.
+
+---
+
 ## 📑 Citation
 
 If you find ATLAS helpful in your research or industrial diagnostics, please cite:
