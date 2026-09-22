@@ -1,0 +1,46 @@
+{
+  "model_type": "vit",
+  "certificate": {
+    "num_cert_points": 14,
+    "mae": 0.019932123723528483,
+    "rmse": 0.026321983125061437,
+    "max_error": 0.04480983475432421,
+    "q95_error": 0.04443849374816331,
+    "q95_upper_bound": 0.04480983475432421,
+    "confidence_level": 0.95,
+    "surface_relief": 2.000255596026074,
+    "relative_q95_error_pct": 2.240205443911684,
+    "certified_valid": true
+  },
+  "allocation": {
+    "n_total": 80,
+    "n_est": 66,
+    "n_cert": 14,
+    "batch_size": 2048,
+    "budget_seconds": 25.0,
+    "expected_error": 0.03036442212638425,
+    "c_ratio": 0.06970396255771914
+  },
+  "analysis": {
+    "min_coord": [
+      1.044577717781067,
+      0.38629692792892456
+    ],
+    "min_loss": 1.603938293546234,
+    "origin_loss": 1.6669156551344413,
+    "origin_curvature_eigs": [
+      0.3336995244026184,
+      0.21283607184886932
+    ],
+    "origin_condition_number": 1.567871092074899,
+    "flatness_index": 0.5465355962514877,
+    "surface_relief": 2.000255596026074
+  },
+  "cost_model": {
+    "tau": 0.0002733339992119,
+    "kappa": 1e-08,
+    "sigma2": 0.040343733622177934,
+    "m3": 0.2725938856601715,
+    "loss_relief": 0.63346266746521
+  }
+}

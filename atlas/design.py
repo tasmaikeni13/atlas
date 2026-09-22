@@ -1,0 +1,135 @@
+"""Budget-optimal experimental design and anchor allocation for ATLAS."""
+
+from __future__ import annotations
+
+import dataclasses
+from typing import Any, Dict, List, Optional, Tuple
+import numpy as np
+from scipy.optimize import minimize_scalar
+
+from .probe import CostModel
+
+@dataclasses.dataclass
+class OptimalAllocation:
+    """Optimal allocation parameters derived from the theoretical rate minimax solver."""
+    n_total: int
+    n_est: int
+    n_cert: int
+    batch_size: int
+    budget_seconds: float
+    expected_error: float
+    c_ratio: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "n_total": int(self.n_total),
+            "n_est": int(self.n_est),
+            "n_cert": int(self.n_cert),
+            "batch_size": int(self.batch_size),
+            "budget_seconds": float(self.budget_seconds),
+            "expected_error": float(self.expected_error),
+            "c_ratio": float(self.c_ratio),
+        }
+
+
+class BudgetAllocator:
+    """Solves the minimax rate-optimal allocation between anchor count N and sample batch size B."""
+
+    def __init__(self, cost_model: CostModel, cert_fraction: float = 0.15):
+        self.cm = cost_model
+        self.cert_fraction = cert_fraction
+
+    def solve(
+        self,
+        budget_seconds: float,
+        radius: float = 1.0,
+        min_batch: int = 16,
+        max_batch: int = 2048,
+        min_anchors: int = 8,
+        max_anchors: int = 80
+    ) -> OptimalAllocation:
+        """Finds (N*, B*) minimizing E(N, B) = c1 * M3 * R^3 * N^(-3/2) + c2 * sigma * B^(-1/2)."""
+        tau = self.cm.tau
+        kappa = self.cm.kappa
+        sigma = np.sqrt(max(self.cm.sigma2, 1e-8))
+        m3 = max(self.cm.m3, 1e-4)
+
+        c1 = 1.0 / 6.0
+        c2 = 1.0
+
+        # We search over batch size B in [min_batch, max_batch]
+        # For a given B, the maximum affordable anchors is N(B) = C / (tau + kappa * B)
+        def objective(B_val: float) -> float:
+            cost_per_anchor = tau + kappa * B_val
+            N_val = min(budget_seconds / cost_per_anchor, float(max_anchors))
+            if N_val < min_anchors:
+                return 1e9
+            bias = c1 * m3 * (radius ** 3) * (N_val ** (-1.5))
+            stoch = c2 * sigma / np.sqrt(B_val)
+            return bias + stoch
+
+        res = minimize_scalar(objective, bounds=(min_batch, max_batch), method="bounded")
+        best_B = int(np.clip(np.round(res.x), min_batch, max_batch))
+        cost_per_anchor = tau + kappa * best_B
+        best_N = int(np.clip(np.floor(budget_seconds / cost_per_anchor), min_anchors, max_anchors))
+
+        n_cert = int(max(np.round(best_N * self.cert_fraction), 4))
+        n_est = max(best_N - n_cert, 4)
+
+        exp_err = float(c1 * m3 * (radius ** 3) * (n_est ** (-1.5)) + c2 * sigma / np.sqrt(best_B))
+
+        return OptimalAllocation(
+            n_total=best_N,
+            n_est=n_est,
+            n_cert=n_cert,
+            batch_size=best_B,
+            budget_seconds=budget_seconds,
+            expected_error=exp_err,
+            c_ratio=float((kappa * best_B) / cost_per_anchor)
+        )
+
+
+def generate_halton_anchors(
+    num_points: int,
+    radius_x: float = 1.0,
+    radius_y: float = 1.0,
+    seed: int = 42
+) -> np.ndarray:
+    """Generates 2D quasi-random low-discrepancy anchor points in [-rx, rx] x [-ry, ry]."""
+    # Halton sequence for bases (2, 3)
+    def halton_seq(count: int, base: int) -> np.ndarray:
+        seq = np.zeros(count)
+        for i in range(count):
+            f = 1.0
+            r = 0.0
+            idx = i + 1 + seed
+            while idx > 0:
+                f /= base
+                r += f * (idx % base)
+                idx //= base
+            seq[i] = r
+        return seq
+
+    u = halton_seq(num_points, 2)
+    v = halton_seq(num_points, 3)
+
+    # Scale to [-rx, rx] x [-ry, ry]
+    xs = (u * 2.0 - 1.0) * radius_x
+    ys = (v * 2.0 - 1.0) * radius_y
+    anchors = np.column_stack([xs, ys])
+    # Ensure origin (0, 0) is explicitly included
+    anchors[0] = [0.0, 0.0]
+    return anchors
+
+
+def generate_dense_grid(
+    radius_x: float = 1.0,
+    radius_y: float = 1.0,
+    resolution: int = 80
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Generates high-resolution coordinate matrices (X, Y) and flattened queries for visualization."""
+    xs = np.linspace(-radius_x, radius_x, resolution, dtype=np.float32)
+    ys = np.linspace(-radius_y, radius_y, resolution, dtype=np.float32)
+    X, Y = np.meshgrid(xs, ys)
+    query_points = np.column_stack([X.ravel(), Y.ravel()])
+    return X, Y, query_points

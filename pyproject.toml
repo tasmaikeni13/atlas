@@ -3,13 +3,13 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "stam-landscape"
+name = "atlas-landscape"
 version = "1.0.0"
-description = "Certified, budget-optimal loss-landscape visualisation for PyTorch models"
+description = "ATLAS: Adaptive Taylor Landscape Analysis System — Budget-optimal, certified loss landscape diagnostics for Transformers on Google Cloud TPUs"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-keywords = ["deep-learning", "loss-landscape", "visualization", "optimization", "pytorch"]
+keywords = ["deep-learning", "loss-landscape", "visualization", "optimization", "transformers", "jax", "flax", "tpu"]
 classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
@@ -18,22 +18,17 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Visualization",
 ]
 dependencies = [
-  "torch>=2.0",
+  "jax>=0.4.20",
+  "optax>=0.1.7",
+  "flax>=0.8.0",
   "numpy>=1.23",
   "scipy>=1.10",
   "matplotlib>=3.6",
   "pillow>=9.0",
 ]
 
-[project.optional-dependencies]
-# Only needed to reproduce the paper's own experiments, not to use the package.
-paper = ["torchvision>=0.15", "datasets>=2.14", "tokenizers>=0.14"]
-
 [project.urls]
-Homepage = "https://github.com/tasmaikeni13/STAM"
+Homepage = "https://github.com/tasmaikeni13/atlas"
 
 [tool.setuptools]
-packages = ["stam", "stam.kernels", "stam.viz"]
-
-[tool.setuptools.package-data]
-"stam.kernels" = ["*.cu", "*.cpp", "*.h"]
+packages = ["atlas", "atlas.viz"]

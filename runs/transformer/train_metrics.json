@@ -1,0 +1,11 @@
+{
+  "model": "CausalTransformer",
+  "num_params": 1564320,
+  "vocab_size": 4000,
+  "seq_len": 48,
+  "num_epochs": 12,
+  "final_val_loss": 6.821052551269531,
+  "final_perplexity": 916.9483032226562,
+  "num_snapshots": 21,
+  "training_time_seconds": 12.7060227394104
+}

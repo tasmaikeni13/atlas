@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Heavy dataset files and trajectories exceeding GitHub 100MB limit
+data/
+runs/vit/*.npz
+runs/transformer/*.npz
+runs/cnn/
+runs/gpt/
+runs/*.log
+runs/*.json.tmp
+
+# LaTeX auxiliary files
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+
+# Lean build artifacts
+proofs/AtlasCert/.lake/
+proofs/AtlasCert/lake-packages/

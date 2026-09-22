@@ -1,0 +1,46 @@
+{
+  "model_type": "transformer",
+  "certificate": {
+    "num_cert_points": 14,
+    "mae": 0.010724747462852045,
+    "rmse": 0.015827188990262128,
+    "max_error": 0.04407865410823497,
+    "q95_error": 0.029884537910246624,
+    "q95_upper_bound": 0.04407865410823497,
+    "confidence_level": 0.95,
+    "surface_relief": 2.2215222541393427,
+    "relative_q95_error_pct": 1.984164418164329,
+    "certified_valid": true
+  },
+  "allocation": {
+    "n_total": 80,
+    "n_est": 66,
+    "n_cert": 14,
+    "batch_size": 2048,
+    "budget_seconds": 25.0,
+    "expected_error": 0.046902214649704094,
+    "c_ratio": 0.07362301051118464
+  },
+  "analysis": {
+    "min_coord": [
+      16.998964309692383,
+      -5.48159122467041
+    ],
+    "min_loss": 6.531235819705827,
+    "origin_loss": 7.06594276427516,
+    "origin_curvature_eigs": [
+      0.017817966639995575,
+      0.0036077324766665697
+    ],
+    "origin_condition_number": 4.938827020915589,
+    "flatness_index": 0.021425699116662145,
+    "surface_relief": 2.2215222541393427
+  },
+  "cost_model": {
+    "tau": 0.000257693900493905,
+    "kappa": 1e-08,
+    "sigma2": 0.0042319377282562225,
+    "m3": 0.01,
+    "loss_relief": 0.17979907989501953
+  }
+}

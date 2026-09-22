@@ -1,63 +1,40 @@
-# STAM: reproduce everything.
-#
-# `make all` runs the full pipeline end to end.  Individual stages are targets so a
-# re-run can start from any point; each writes its artefacts under runs/<task>/.
+# ATLAS: Adaptive Taylor Landscape Analysis System
+# Complete reproduction pipeline on Google Cloud TPU v4.
 
-PY := PYTHONPATH=. python3 -W ignore
-TASKS := cnn gpt
+PY := python3 -W ignore
+TPU_ENV := TPU_CHIPS_PER_HOST_BOUNDS="2,2,1" TPU_HOST_BOUNDS="1,1,1"
 
-.PHONY: all kernels test example train reference domain sweep landscape sharpness figures paper proofs clean
+.PHONY: all train benchmark sharpness render paper proofs example clean
 
-all: kernels train reference domain sweep landscape sharpness figures paper proofs
-
-kernels:
-	$(PY) bench/test_kernels.py
-	$(PY) bench/bakeoff.py
-
-test:
-	$(PY) bench/test_kernels.py
-	$(PY) bench/test_pipeline.py
-
-example:
-	$(PY) examples/quickstart.py
+all: train benchmark sharpness render paper proofs
 
 train:
-	$(PY) experiments/01_train.py --task cnn --device cuda:0
-	$(PY) experiments/01_train.py --task gpt --device cuda:1
+	$(TPU_ENV) $(PY) experiments/01_train_vit.py
+	$(TPU_ENV) $(PY) experiments/01_train_transformer.py
 
-reference:
-	$(PY) experiments/02_reference.py --task cnn
-	$(PY) experiments/02_reference.py --task gpt
-
-domain:
-	$(PY) experiments/02b_domain.py --task cnn
-	$(PY) experiments/02b_domain.py --task gpt
-
-sweep:
-	$(PY) experiments/03_budget_sweep.py --task cnn --split train
-	$(PY) experiments/03_budget_sweep.py --task gpt --split train
-
-landscape:
-	$(PY) experiments/04_landscape.py --task cnn --device cuda:0
-	$(PY) experiments/04_landscape.py --task gpt --device cuda:1
+benchmark:
+	$(TPU_ENV) $(PY) experiments/02_benchmark.py --model vit
+	$(TPU_ENV) $(PY) experiments/02_benchmark.py --model transformer
 
 sharpness:
-	$(PY) experiments/05_sharpness.py --task cnn
-	$(PY) experiments/05_sharpness.py --task gpt
+	$(TPU_ENV) $(PY) experiments/03_sharpness_audit.py
 
-figures:
-	$(PY) figures/make_figures.py
+render:
+	$(TPU_ENV) $(PY) experiments/04_render_all.py
 
-paper: figures
-	$(PY) paper/make_numbers.py
-	cd paper && pdflatex -interaction=nonstopmode stam.tex >/dev/null \
-	  && bibtex stam >/dev/null \
-	  && pdflatex -interaction=nonstopmode stam.tex >/dev/null \
-	  && pdflatex -interaction=nonstopmode stam.tex >/dev/null
-	@echo "paper/stam.pdf"
+paper:
+	cd paper && pdflatex -interaction=nonstopmode atlas.tex >/dev/null \
+	  && bibtex atlas >/dev/null \
+	  && pdflatex -interaction=nonstopmode atlas.tex >/dev/null \
+	  && pdflatex -interaction=nonstopmode atlas.tex >/dev/null
+	@echo "paper/atlas.pdf generated successfully."
 
 proofs:
-	cd proofs/StamCert && lake build
+	cd proofs/AtlasCert && ~/.elan/bin/lake build
+
+example:
+	$(TPU_ENV) $(PY) examples/quickstart.py
 
 clean:
-	rm -f paper/*.aux paper/*.log paper/*.out paper/*.bbl paper/*.blg paper/*.toc
+	rm -rf __pycache__ */__pycache__ */*/__pycache__
+	cd paper && rm -f atlas.aux atlas.bbl atlas.blg atlas.log atlas.out
