@@ -30,7 +30,7 @@
   ```bash
   JAX_PLATFORMS=cpu .venv/bin/python <script.py>
   ```
-- **Lean 4 Toolchain**: Lean 4 $\ge$ 4.8.0 with `lake` at `~/.elan/bin/lake`.
+- **Lean 4 Toolchain**: Lean 4 `v4.32.1` pinned via `proofs/AtlasCert/lean-toolchain` with `lake` at `~/.elan/bin/lake`. Ensure Mathlib precompiled olean archives are retrieved via `cd proofs/AtlasCert && ~/.elan/bin/lake exe cache get` before `lake build`.
 - **LaTeX Toolchain**: `pdflatex` and `bibtex` for compiling `paper/atlas.tex`.
 
 ---
@@ -44,6 +44,7 @@ Run all commands from the repository root:
 JAX_PLATFORMS=cpu .venv/bin/python test_vit_imagenet_smoke.py   # ViT on ImageNet-100 smoke test
 JAX_PLATFORMS=cpu .venv/bin/python test_125m_smoke.py           # 125M FlashAttention Transformer smoke test
 .venv/bin/python -m unittest rag/tests/test_rag.py              # RAG retrieval unit tests
+cd proofs/AtlasCert && ~/.elan/bin/lake build                    # Machine-check formal Lean 4 proofs
 
 # --- Research RAG Retrieval ---
 .venv/bin/python -m rag.search "<query>"                        # Universal search across code, math, paper & runs
@@ -54,11 +55,13 @@ JAX_PLATFORMS=cpu .venv/bin/python test_125m_smoke.py           # 125M FlashAtte
 .venv/bin/python phases/run_phase.py --status                   # Inspect phase states & dependency graph
 .venv/bin/python phases/run_phase.py --phase <N>                # Execute & verify specific phase (1-9)
 
-# --- Experiments & Paper ---
+# --- Experiments, Sweeps & Paper ---
 make smoke_125m && make smoke_vit                               # Verify model architectures & TPU kernels
 make train                                                      # Train ViT (CIFAR-10) & Transformer (WikiText-103)
 make benchmark                                                  # Run multi-method budget benchmarks
 make sharpness                                                  # Run curvature noise inflation audit
+JAX_PLATFORMS=cpu .venv/bin/python experiments/08_vit_sweep_diagnostics.py --smoke_test  # Landscape sweep diagnostics
+JAX_PLATFORMS=cpu .venv/bin/python experiments/10_hpo_peer_benchmark.py --smoke_test    # Head-to-head HPO competition
 make render                                                     # Render 2D/3D figures and animated GIFs
 make paper                                                      # Compile camera-ready paper/atlas.pdf
 make clean                                                      # Remove pycache and LaTeX auxiliary files
@@ -91,8 +94,11 @@ make clean                                                      # Remove pycache
 3. **Double Precision for Numerical Stability**: For ill-conditioned projected Hessians, cast projection coordinates to `float32` or `float64` where appropriate. Ensure partition of unity weights never divide by zero ($\sum w_i > 10^{-12}$).
 4. **Pytree Flattening**: Flatten and unflatten model parameters using `atlas.device.flatten_params` and `unflatten_params` to maintain contiguous 1D parameter vectors.
 
+### Hermetic Data Pipelines & Synthetic Fallbacks
+- All dataset ingestion loaders (`load_cifar10`, `ImageNet100Dataset`, `fineweb.py`) feature deterministic synthetic fallbacks. When local image folders or external network connections are unavailable, loaders generate reproducible, normalized synthetic batches allowing end-to-end training and landscape diagnostics to run hermetically without external dependencies.
+
 ### Formal Verification (Lean 4)
-- **Zero-Axiom Rule**: All theorems in `proofs/AtlasCert/AtlasCert/Certificates.lean` must be machine-checked without `sorry` or unverified axioms. Verify using `lake build`.
+- **Zero-Axiom Rule**: All theorems in `proofs/AtlasCert/AtlasCert/Certificates.lean` must be machine-checked without `sorry` or unverified axioms. Verify using `lake build`. Ensure Mathlib precompiled oleans are fetched via `lake exe cache get`.
 
 ### Documentation & Scientific Cohesion
 - Keep `paper/atlas.tex`, `README.md`, `phases/state.json`, and benchmark JSONs strictly in sync. When constants ($c_1, c_2, \kappa, \tau$) or empirical numbers change, propagate them across all artifacts.
