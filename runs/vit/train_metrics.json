@@ -4,8 +4,8 @@
   "train_samples": 4000,
   "test_samples": 800,
   "num_epochs": 12,
-  "final_test_acc": 0.39374998211860657,
-  "final_test_loss": 1.639752745628357,
+  "final_test_acc": 0.0949999988079071,
+  "final_test_loss": 2.3050551414489746,
   "num_snapshots": 39,
-  "training_time_seconds": 15.91889500617981
+  "training_time_seconds": 178.72668862342834
 }

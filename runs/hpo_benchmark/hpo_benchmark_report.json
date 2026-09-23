@@ -5,14 +5,14 @@
       "steps_to_optimal_lr": 4,
       "diverged_trials": 0,
       "total_trials": 2,
-      "time_seconds": 15.141563415527344,
+      "time_seconds": 15.45746374130249,
       "recommended_lr": 0.0007499999999999999
     },
     "Random Search": {
       "best_loss": 4.938910484313965,
       "diverged_trials": 0,
       "total_trials": 4,
-      "time_seconds": 13.261338949203491,
+      "time_seconds": 13.707364320755005,
       "best_config": {
         "lr": 0.002098302729986613,
         "weight_decay": 0.0020731719263694525
@@ -22,7 +22,7 @@
       "best_loss": 4.741390228271484,
       "diverged_trials": 0,
       "total_trials": 4,
-      "time_seconds": 13.317189693450928,
+      "time_seconds": 13.857832908630371,
       "best_config": {
         "lr": 0.002098302729986613,
         "weight_decay": 0.0020731719263694525
@@ -32,7 +32,7 @@
       "best_loss": 4.716709613800049,
       "diverged_trials": 0,
       "total_trials": 5,
-      "time_seconds": 26.435035705566406
+      "time_seconds": 27.76780605316162
     }
   },
   "budget_steps": 16
