@@ -93,6 +93,11 @@ def verify_phase(phase_id: int, state: Dict[str, Any], verbose: bool = True) -> 
         venv_bin = REPO_ROOT / ".venv" / "bin"
         if venv_bin.exists():
             env["PATH"] = f"{venv_bin}:{env.get('PATH', '')}"
+        elan_bin = pathlib.Path.home() / ".elan" / "bin"
+        if elan_bin.exists():
+            env["PATH"] = f"{elan_bin}:{env.get('PATH', '')}"
+        if "JAX_PLATFORMS" not in env:
+            env["JAX_PLATFORMS"] = "cpu"
         res = subprocess.run(cmd, shell=True, cwd=str(REPO_ROOT), capture_output=True, text=True, env=env)
         if res.returncode != 0:
             print(f"  [FAIL] Verification command failed (exit code {res.returncode}):")

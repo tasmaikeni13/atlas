@@ -231,12 +231,11 @@ theorem debias_unbiased {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     ∫ ω, ((e + ξ ω) ^ 2 - v) ∂μ = e ^ 2
 ```
 
-Build and verify the proofs locally:
+Build and verify the formal proofs locally:
 ```bash
-cd proofs/AtlasCert && lake build
+make proofs
+# or: cd proofs/AtlasCert && lake exe cache get && lake build
 ```
-
----
 
 ---
 
@@ -301,8 +300,8 @@ make sweep_vit
 
 ### Prerequisites
 - Python $\ge$ 3.10
-- Google Cloud TPU v4 (or TPU v2/v3/v5e) with `jax`, `optax`, `flax`, and `libtpu` installed.
-- (Optional) Lean 4 $\ge$ 4.8.0 for proof verification.
+- Google Cloud TPU v4 (or TPU v2/v3/v5e / GPU / CPU fallback) with `jax`, `optax`, `flax`, and `libtpu` installed.
+- (Optional) Lean 4 (v4.32.1 pinned via `proofs/AtlasCert/lean-toolchain`) for formal machine verification.
 
 ### Install Package
 ```bash

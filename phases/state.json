@@ -9,7 +9,7 @@
       "file": "phases/phase1.md",
       "status": "COMPLETED",
       "dependencies": [],
-      "verification_command": "test -f proofs/AtlasCert/AtlasCert/Certificates.lean",
+      "verification_command": "cd proofs/AtlasCert && lake build",
       "artifacts": [
         "proofs/AtlasCert/AtlasCert/Certificates.lean",
         "paper/atlas.tex"
