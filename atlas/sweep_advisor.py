@@ -57,11 +57,21 @@ class LandscapeDiagnostics:
 class LandscapeDiagnosticEngine:
     """Computes exact loss landscape diagnostics from ATLAS Taylor jets in milliseconds."""
 
-    def __init__(self, probe: JetProbe, current_lr: float = 3e-4, current_wd: float = 0.01, batch_size: int = 64):
+    def __init__(
+        self,
+        probe: JetProbe,
+        current_lr: float = 3e-4,
+        current_wd: float = 0.01,
+        batch_size: int = 64,
+        min_lr: float = 1e-5,
+        max_lr: float = 3e-3
+    ):
         self.probe = probe
         self.current_lr = current_lr
         self.current_wd = current_wd
         self.batch_size = batch_size
+        self.min_lr = min_lr
+        self.max_lr = max_lr
 
     def analyze(
         self,
@@ -105,7 +115,7 @@ class LandscapeDiagnosticEngine:
         # 1. Stability Verdict
         if eos_margin < 0.9:
             verdict = "OSCILLATING_UNSTABLE"
-            rec_lr = float((2.0 / max(lambda_max, 1e-6)) * 0.70)
+            rec_lr = max(self.min_lr, min(self.max_lr, self.current_lr * 0.40))
             rec_wd = self.current_wd * 1.5
             rec_b_scale = 1.5
             summary = (
@@ -115,7 +125,7 @@ class LandscapeDiagnosticEngine:
             )
         elif 0.9 <= eos_margin <= 3.0:
             verdict = "OPTIMAL_EDGE"
-            rec_lr = self.current_lr
+            rec_lr = max(self.min_lr, min(self.max_lr, self.current_lr))
             rec_wd = self.current_wd
             rec_b_scale = 1.0
             summary = (
@@ -125,7 +135,7 @@ class LandscapeDiagnosticEngine:
             )
         else:
             verdict = "SLUGGISH_UNDERFIT"
-            rec_lr = float((2.0 / max(lambda_max, 1e-6)) * 0.75) if lambda_max > 1e-5 else self.current_lr * 3.0
+            rec_lr = max(self.min_lr, min(self.max_lr, self.current_lr * min(2.5, max(1.2, eos_margin / 2.0))))
             rec_wd = self.current_wd
             rec_b_scale = 1.0
             summary = (

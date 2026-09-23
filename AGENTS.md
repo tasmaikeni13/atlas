@@ -52,7 +52,7 @@ JAX_PLATFORMS=cpu .venv/bin/python test_125m_smoke.py           # 125M FlashAtte
 
 # --- Autonomous Research Phases & Status ---
 .venv/bin/python phases/run_phase.py --status                   # Inspect phase states & dependency graph
-.venv/bin/python phases/run_phase.py --phase <N>                # Execute & verify specific phase (1-8)
+.venv/bin/python phases/run_phase.py --phase <N>                # Execute & verify specific phase (1-9)
 
 # --- Experiments & Paper ---
 make smoke_125m && make smoke_vit                               # Verify model architectures & TPU kernels
@@ -75,7 +75,7 @@ make clean                                                      # Remove pycache
 | `atlas/viz/` | Visualization and rendering | `render_landscape_2d`, `render_landscape_3d`, `create_landscape_gif` |
 | `proofs/AtlasCert/` | Lean 4 formal verification | `AtlasCert.lean`, `Certificates.lean` (`alloc_lower_bound`, `debias_unbiased`) |
 | `rag/` | Zero-overhead research RAG index | `rag.search`, `rag.index`, parsers (python, lean, latex, md), SQLite store |
-| `phases/` | Autonomous self-correcting protocol| `run_phase.py`, `state.json`, `phase1.md` through `phase8.md` |
+| `phases/` | Autonomous self-correcting protocol| `run_phase.py`, `state.json`, `phase1.md` through `phase9.md` |
 | `experiments/` | Reproducible benchmark drivers | `01_train_*.py` through `09_benchmark_vit_all_methods.py` |
 | `paper/` | LaTeX paper source & output | `atlas.tex`, `refs.bib`, `atlas.pdf` |
 | `skills/` | Research methodologies & guides | `theory-research`, `ml-research`, `experimental-research`, `literature-frontier` |

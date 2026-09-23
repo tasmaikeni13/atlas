@@ -1,0 +1,39 @@
+{
+  "methods": {
+    "ATLAS (Ours)": {
+      "best_loss": 4.205503463745117,
+      "steps_to_optimal_lr": 4,
+      "diverged_trials": 0,
+      "total_trials": 2,
+      "time_seconds": 15.141563415527344,
+      "recommended_lr": 0.0007499999999999999
+    },
+    "Random Search": {
+      "best_loss": 4.938910484313965,
+      "diverged_trials": 0,
+      "total_trials": 4,
+      "time_seconds": 13.261338949203491,
+      "best_config": {
+        "lr": 0.002098302729986613,
+        "weight_decay": 0.0020731719263694525
+      }
+    },
+    "Optuna TPE": {
+      "best_loss": 4.741390228271484,
+      "diverged_trials": 0,
+      "total_trials": 4,
+      "time_seconds": 13.317189693450928,
+      "best_config": {
+        "lr": 0.002098302729986613,
+        "weight_decay": 0.0020731719263694525
+      }
+    },
+    "ASHA": {
+      "best_loss": 4.716709613800049,
+      "diverged_trials": 0,
+      "total_trials": 5,
+      "time_seconds": 26.435035705566406
+    }
+  },
+  "budget_steps": 16
+}

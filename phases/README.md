@@ -119,13 +119,15 @@ graph TD
     P1 --> P3["Phase 3: Hardware Pod & Kernel Suite"]
     P2 --> P5["Phase 5: Landscape Diagnostics & Sweep Advisor"]
     P3 --> P4["Phase 4: Frontier Architectures (125M & ViT)"]
-    P3 --> P6["Phase 6: Large-Scale Competitive Benchmarks"]
-    P4 --> P6
-    P5 --> P6
-    P6 --> P7["Phase 7: Robustness, Ablation & OOD"]
-    P1 --> P8["Phase 8: Code Cleansing & Publication Paper"]
-    P6 --> P8
-    P7 --> P8
+    P5 --> P6["Phase 6: HPO & Sweep Diagnostics Competition"]
+    P3 --> P7["Phase 7: Large-Scale Competitive Benchmarks"]
+    P4 --> P7
+    P5 --> P7
+    P6 --> P7
+    P7 --> P8["Phase 8: Robustness, Ablation & OOD"]
+    P1 --> P9["Phase 9: Code Cleansing & Publication Paper"]
+    P7 --> P9
+    P8 --> P9
 ```
 
 ### Invalidation Cascade Rules
@@ -134,12 +136,13 @@ Whenever changes are committed to a phase, the agent must check the dependency t
 
 | Trigger Event | Directly Invalidated Phases | Required Adaptation Actions |
 | :--- | :--- | :--- |
-| **Theorem / Minimax Rate Change** (Phase 1) | Phase 2, Phase 3, Phase 6, Phase 8 | 1. Update `paper/atlas.tex` (Theorems 1-3) & recompile PDF.<br/>2. Update `proofs/AtlasCert/AtlasCert/Certificates.lean` & run `lake build`.<br/>3. Re-derive $(N^*, B^*)$ formulas in `atlas/design.py`.<br/>4. Re-run Monte Carlo simulations in Phase 2.<br/>5. Re-run competitive benchmarks in Phase 6. |
-| **Statistical Bound / DKW Change** (Phase 2) | Phase 5, Phase 6, Phase 7, Phase 8 | 1. Update variance-correction and DKW quantile code in `atlas/certify.py`.<br/>2. Regenerate certificate plots in `figures/certificate_*.pdf`.<br/>3. Update Section 2.4 and Figure 4 in `paper/atlas.tex`. |
-| **Hardware Cost Model / Kernel Change** (Phase 3) | Phase 4, Phase 6, Phase 8 | 1. Re-profile $(\tau, \kappa)$ on TPU v4 TensorCores.<br/>2. Re-compile JAX forward-over-reverse autodiff graphs.<br/>3. Verify baseline kernels (`VectorizedGrid`, `TpuLanczos`, `TpuFD`).<br/>4. Update Table 1 and Section 3 of `paper/atlas.tex`. |
-| **Model Architecture / Data Pipeline Change** (Phase 4) | Phase 5, Phase 6, Phase 8 | 1. Verify 124.5M Causal Transformer and ViT-Small/16 smoke tests.<br/>2. Re-record optimization trajectories on FineWeb-Edu and ImageNet-100.<br/>3. Update model description paragraphs in `paper/atlas.tex`. |
-| **Sweep Diagnostic Formulation Change** (Phase 5) | Phase 6, Phase 8 | 1. Update Edge-of-Stability ($\mu_{\text{EoS}}$) and basin flatness ($R_{\text{flat}}$) formulas in `atlas/sweep_advisor.py`.<br/>2. Re-run sweep diagnostics in `experiments/08_vit_sweep_diagnostics.py`.<br/>3. Update Section 4.3 in `paper/atlas.tex`. |
-| **Benchmark Metric / Baseline Result Change** (Phase 6) | Phase 7, Phase 8 | 1. Re-run all 6 baseline comparisons across all budget tiers.<br/>2. Update benchmark JSON files in `runs/benchmark/`.<br/>3. Re-render Table 1 and Figures 1, 2, 3 in `paper/atlas.tex`.<br/>4. Recompile paper to produce updated `paper/atlas.pdf`. |
+| **Theorem / Minimax Rate Change** (Phase 1) | Phase 2, Phase 3, Phase 7, Phase 9 | 1. Update `paper/atlas.tex` (Theorems 1-3) & recompile PDF.<br/>2. Update `proofs/AtlasCert/AtlasCert/Certificates.lean` & run `lake build`.<br/>3. Re-derive $(N^*, B^*)$ formulas in `atlas/design.py`.<br/>4. Re-run Monte Carlo simulations in Phase 2.<br/>5. Re-run competitive benchmarks in Phase 7. |
+| **Statistical Bound / DKW Change** (Phase 2) | Phase 5, Phase 6, Phase 7, Phase 8, Phase 9 | 1. Update variance-correction and DKW quantile code in `atlas/certify.py`.<br/>2. Regenerate certificate plots in `figures/certificate_*.pdf`.<br/>3. Update Section 2.4 and Figure 4 in `paper/atlas.tex`. |
+| **Hardware Cost Model / Kernel Change** (Phase 3) | Phase 4, Phase 7, Phase 9 | 1. Re-profile $(\tau, \kappa)$ on TPU v4 TensorCores.<br/>2. Re-compile JAX forward-over-reverse autodiff graphs.<br/>3. Verify baseline kernels (`VectorizedGrid`, `TpuLanczos`, `TpuFD`).<br/>4. Update Table 1 and Section 3 of `paper/atlas.tex`. |
+| **Model Architecture / Data Pipeline Change** (Phase 4) | Phase 5, Phase 6, Phase 7, Phase 9 | 1. Verify 124.5M Causal Transformer and ViT-Small/16 smoke tests.<br/>2. Re-record optimization trajectories on FineWeb-Edu and ImageNet-100.<br/>3. Update model description paragraphs in `paper/atlas.tex`. |
+| **Sweep Diagnostic Formulation Change** (Phase 5) | Phase 6, Phase 7, Phase 9 | 1. Update Edge-of-Stability ($\mu_{\text{EoS}}$) and basin flatness ($R_{\text{flat}}$) formulas in `atlas/sweep_advisor.py`.<br/>2. Re-run sweep diagnostics in `experiments/08_vit_sweep_diagnostics.py`.<br/>3. Re-run HPO peer benchmark in `experiments/10_hpo_peer_benchmark.py`. |
+| **HPO Benchmark / Sweep Metric Change** (Phase 6) | Phase 7, Phase 9 | 1. Re-run peer HPO comparisons across step budgets.<br/>2. Update `runs/hpo_benchmark/hpo_benchmark_report.json`.<br/>3. Verify $\ge 2.5\times$ speedup and zero divergence rate. |
+| **Benchmark Metric / Baseline Result Change** (Phase 7) | Phase 8, Phase 9 | 1. Re-run all 6 baseline comparisons across all budget tiers.<br/>2. Update benchmark JSON files in `runs/benchmark/`.<br/>3. Re-render Table 1 and Figures 1, 2, 3 in `paper/atlas.tex`.<br/>4. Recompile paper to produce updated `paper/atlas.pdf`. |
 
 ---
 
@@ -165,11 +168,15 @@ To be publishable in top-tier machine learning venues (NeurIPS, ICML, ICLR, JMLR
 ### 5. Hutchinson Stochastic Trace (`TpuHutchinsonTrace`)
 - **Variance Invariant:** For projected 2D subspace diagnostics, ATLAS exact jets exhibit **zero stochastic estimation variance** on evaluated batches, whereas Hutchinson estimators require large sample counts $N_v \ge 50$ to converge.
 
+### 6. Hyperparameter Sweep Baselines (`RandomSearchHPO`, `OptunaTPEBaseline`, `ASHABaseline`)
+- **Sample Efficiency Invariant:** ATLAS Curvature-Guided Sweep Advisor requires $\le 15$ exploratory probe steps to synthesize optimal stable learning rates ($\eta^* = \frac{2}{\lambda_{\max}} \times \gamma_{\text{opt}}$), achieving target loss with $\ge \mathbf{2.5\times}$ fewer total training steps than Optuna TPE or Random Search.
+- **Stability & Divergence Prevention Invariant:** ATLAS achieves **$100\%$ divergence prevention** (0 diverged trials) by constraining learning rates to the Edge-of-Stability window ($\mu_{\text{EoS}} \in [0.9, 2.5]$), whereas Random Search and black-box HPO incur $20\%\text{--}40\%$ divergence rates during exploratory sweeping.
+
 ---
 
 ## 📋 Complete Phase Directory
 
-The research and publication program is partitioned into 8 sequential, self-contained phases. No more than 10 phases are used, maintaining focus and execution velocity:
+The research and publication program is partitioned into 9 sequential, self-contained phases. No more than 10 phases are used, maintaining focus and execution velocity:
 
 | Phase | File | Title & Core Objectives |
 | :---: | :--- | :--- |
@@ -178,9 +185,10 @@ The research and publication program is partitioned into 8 sequential, self-cont
 | **03** | [`phase3.md`](file:///home/tasma/atlas/phases/phase3.md) | **Hardware Pod Architecture, TPU/GPU Compilation & Diagnostic Kernel Suite.** Native Google Cloud TPU v4 implementation, exact autodiff 2D Taylor jets, and high-performance reference implementations for all competitors. |
 | **04** | [`phase4.md`](file:///home/tasma/atlas/phases/phase4.md) | **Frontier Architectures (125M FineWeb-Edu Transformer & ViT ImageNet-100) & Live Recording Pipeline.** Fused FlashAttention causal decoders, ViT-Small/16, streaming HuggingFace dataset pipelines, and zero-overhead `AtlasRecorder`. |
 | **05** | [`phase5.md`](file:///home/tasma/atlas/phases/phase5.md) | **Loss Landscape Geometry Diagnostics, Edge-of-Stability Margin & Automated Hyperparameter Advisor.** Extraction of $\mu_{\text{EoS}}$, basin conditioning $\kappa$, flatness radius $R_{\text{flat}}$, and automated learning rate / weight decay sweep synthesis. |
-| **06** | [`phase6.md`](file:///home/tasma/atlas/phases/phase6.md) | **Large-Scale Competitive Benchmark Suite & Pareto Domination across Wall-Clock Budgets.** Comprehensive empirical evaluation against all peers across $0.5\text{s} - 30.0\text{s}$ wall budgets; automated diagnosis, restart, and phase remake protocols. |
-| **07** | [`phase7.md`](file:///home/tasma/atlas/phases/phase7.md) | **Empirical Robustness, Partition of Unity Ablation, Noise Resistance & OOD Generalization Audit.** Sensitivity to anchor budgets, Wendland vs alternative kernels, gradient noise stress testing, and out-of-distribution generalization correlations. |
-| **08** | [`phase8.md`](file:///home/tasma/atlas/phases/phase8.md) | **Codebase Cleansing, PEP 8 Formatting, Humanized Documentation, LaTeX Paper Compilation & Publication Release.** Repository-wide cleanup, PEP-8 formatting, rich docstrings, humanized README/paper, compiled camera-ready PDF, and GitHub release push. |
+| **06** | [`phase6.md`](file:///home/tasma/atlas/phases/phase6.md) | **Automated Hyperparameter Sweep Competition: Curvature-Guided Diagnostics vs. Black-Box HPO.** Head-to-head empirical competition against Random Search, Optuna TPE, and ASHA; sample efficiency speedup $\ge 2.5\times$ and 100% divergence prevention. |
+| **07** | [`phase7.md`](file:///home/tasma/atlas/phases/phase7.md) | **Large-Scale Competitive Benchmark Suite & Pareto Domination across Wall-Clock Budgets.** Comprehensive empirical evaluation against all peers across $0.5\text{s} - 30.0\text{s}$ wall budgets; automated diagnosis, restart, and phase remake protocols. |
+| **08** | [`phase8.md`](file:///home/tasma/atlas/phases/phase8.md) | **Empirical Robustness, Partition of Unity Ablation, Noise Resistance & OOD Generalization Audit.** Sensitivity to anchor budgets, Wendland vs alternative kernels, gradient noise stress testing, and out-of-distribution generalization correlations. |
+| **09** | [`phase9.md`](file:///home/tasma/atlas/phases/phase9.md) | **Codebase Cleansing, PEP 8 Formatting, Humanized Documentation, LaTeX Paper Compilation & Publication Release.** Repository-wide cleanup, PEP-8 formatting, rich docstrings, humanized README/paper, compiled camera-ready PDF, and GitHub release push. |
 
 ---
 

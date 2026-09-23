@@ -30,6 +30,9 @@ sweep_vit:
 benchmark_vit:
 	$(TPU_ENV) $(PY) experiments/09_benchmark_vit_all_methods.py
 
+hpo-benchmark:
+	$(TPU_ENV) $(PY) experiments/10_hpo_peer_benchmark.py
+
 train:
 	$(TPU_ENV) $(PY) experiments/01_train_vit.py
 	$(TPU_ENV) $(PY) experiments/01_train_transformer.py
