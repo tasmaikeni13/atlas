@@ -41,18 +41,28 @@ $$\mathrm{SNR} = \frac{\|\nabla \mathcal{L}\|^2}{\sigma^2 / B}.$$
 
 ## 3. Automated Sweep Advisor Engine (`atlas/sweep_advisor.py`)
 
-Given a set of exploratory hyperparameter trials $\mathcal{H} = \{(\eta_k, \lambda_{\text{wd}, k})\}_{k=1}^K$, the `SweepAdvisor` analyzes trial trajectories and synthesizes an optimal recommendation matrix:
+The phase 6 smoke benchmark also uses a guarded directional proposal. It
+uses the minimizer of the projected quadratic jet along a recent AdamW update
+when the plane captures at least half of that update and local curvature is
+positive. It moderates the scale by captured update energy and caps it at
+eight times the exploratory learning rate. This local heuristic may be
+rejected if the update is uphill or poorly captured.
+
+Given exploratory hyperparameter trials, the advisor proposes a candidate
+grid from recorded diagnostics and evaluation metrics:
 
 ```python
-from atlas.sweep_advisor import SweepAdvisor, TrialDiagnostics
+from atlas.sweep_advisor import SweepAdvisor
 
-advisor = SweepAdvisor()
-advisor.add_trial(trial_id="trial_01", lr=1e-4, wd=0.01, diag=diag_01)
-advisor.add_trial(trial_id="trial_02", lr=1e-3, wd=0.05, diag=diag_02)
-
-recommendations = advisor.synthesize()
-print(f"Optimal Learning Rates: {recommendations.candidate_lrs}")
-print(f"Optimal Weight Decays:  {recommendations.candidate_wds}")
+def propose_grid(diagnostics, eval_loss):
+    advisor = SweepAdvisor()
+    advisor.record_trial(
+        "trial_01",
+        {"lr": 1e-4, "weight_decay": 0.01},
+        diagnostics,
+        eval_metric=eval_loss,
+    )
+    return advisor.recommend_next_sweep()
 ```
 
 ---

@@ -169,8 +169,8 @@ To be publishable in top-tier machine learning venues (NeurIPS, ICML, ICLR, JMLR
 - **Variance Interpretation:** ATLAS has no random-vector approximation conditional on a fixed batch. Mini-batch Hessians still have sampling variance, and the Hutchinson baseline estimates a different full-space quantity.
 
 ### 6. Hyperparameter Sweep Baselines (Random Search, Optuna TPE, Successive Halving)
-- **Current evidence:** The revised one-seed CPU smoke compares equal final training horizons and uses Optuna TPE. ATLAS had a higher final loss than all three peers on synthetic data with independent images and labels.
-- **Open targets:** A target-loss speedup and zero divergence rate require multiple seeds, a learnable task, and compute accounting for the diagnostic jet. The current smoke run establishes neither target.
+- **Current evidence:** Three equal-horizon CPU smoke seeds on a learnable color task use Optuna TPE as a peer. Rankings vary by seed, and ATLAS does not dominate all methods.
+- **Open targets:** A target-loss speedup and zero divergence rate require realistic data, more seeds, and compute accounting for the diagnostic jet. The current smoke runs establish neither target.
 
 ---
 

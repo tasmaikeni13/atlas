@@ -283,7 +283,7 @@ To enable educated, mathematically grounded hyperparameter sweeps, ATLAS provide
 - **ImageNet-100 Pipeline:** Streaming reader for HuggingFace `claudf/imagenet-100` with standard ImageNet normalization and offline synthetic generator fallbacks.
 
 ### Landscape-Guided Hyperparameter Diagnostic Engine
-ATLAS extracts exact projected second-order geometric diagnostics to guide hyperparameter selection. The current CPU HPO smoke report records the diagnostic cost and does not establish a speedup:
+ATLAS extracts exact projected second-order geometric diagnostics to guide hyperparameter selection. Three learnable synthetic CPU smoke seeds show mixed peer rankings and substantial jet cost; they do not establish a speedup:
 1. **Projected curvature margin ($\mu_{\text{EoS}} = \frac{2}{\eta \lambda_{\max}}$):** A local heuristic based on the largest eigenvalue of the two-dimensional projected Hessian when that eigenvalue is positive. It does not certify stability of AdamW or the full model.
 2. **Projected conditioning:** Summarizes anisotropy in the selected two-dimensional plane. Its relationship to optimizer stability and weight decay needs empirical validation.
 3. **Local flatness radius:** Uses a quadratic approximation when projected curvature is positive. It is not a measured out-of-distribution generalization score.

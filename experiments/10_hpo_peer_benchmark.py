@@ -27,9 +27,9 @@ import optax
 from atlas.baselines.hpo import OptunaTPEBaseline, RandomSearchHPO
 from atlas.basis import trajectory_pca
 from atlas.device import flatten_params
-from atlas.imagenet100 import ImageNet100Dataset
 from atlas.probe import JetProbe
-from atlas.sweep_advisor import LandscapeDiagnosticEngine
+from atlas.sweep_advisor import LandscapeDiagnosticEngine, directional_step_scale
+from atlas.synthetic import ColorPatternDataset
 from atlas.vit_imagenet import VisionTransformerImageNet, create_vit_tiny_imagenet
 
 
@@ -164,32 +164,28 @@ def main():
     out_dir = pathlib.Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    training_data = ImageNet100Dataset(
-        img_size=img_size, num_classes=100, split="train",
-        synthetic_fallback=True, seed=args.seed,
-    )
-    validation_data = ImageNet100Dataset(
-        img_size=img_size, num_classes=100, split="val",
-        synthetic_fallback=True, seed=args.seed + 10_000,
+    training_data = ColorPatternDataset(img_size=img_size, seed=args.seed)
+    validation_data = ColorPatternDataset(
+        img_size=img_size, seed=args.seed + 10_000
     )
     selection_batches = [
-        training_data.generate_synthetic_batch(batch_size)
+        training_data.generate_batch(batch_size)
         for _ in range(selection_steps)
     ]
     final_batches = [
-        training_data.generate_synthetic_batch(batch_size)
+        training_data.generate_batch(batch_size)
         for _ in range(final_steps)
     ]
-    selection_eval_batch = validation_data.generate_synthetic_batch(batch_size)
-    final_eval_batch = validation_data.generate_synthetic_batch(batch_size)
+    selection_eval_batch = validation_data.generate_batch(batch_size)
+    final_eval_batch = validation_data.generate_batch(batch_size)
 
     model = (
         VisionTransformerImageNet(
-            num_classes=100, img_size=img_size, patch_size=16,
+            num_classes=2, img_size=img_size, patch_size=16,
             d_model=64, num_layers=2, num_heads=2, mlp_dim=128,
         )
         if args.smoke_test else create_vit_tiny_imagenet(
-            num_classes=100, img_size=img_size, patch_size=16
+            num_classes=2, img_size=img_size, patch_size=16
         )
     )
     init_params = model.init(
@@ -243,17 +239,46 @@ def main():
         )
 
     probe = JetProbe(apply_clean, loss_clean, basis)
-    diagnostics = LandscapeDiagnosticEngine(
+    engine = LandscapeDiagnosticEngine(
         probe, current_lr=initial_config["lr"],
         current_wd=initial_config["weight_decay"],
         batch_size=batch_size, min_lr=1e-5, max_lr=1e-2,
-    ).analyze(selection_eval_batch)
+    )
+    jet = probe.evaluate_jet(0.0, 0.0, selection_eval_batch)
+    diagnostics = engine.analyze_jet(jet)
+    last_update = probe_run["snapshots"][-1] - probe_run["snapshots"][-2]
+    projected_update = jnp.array([
+        jnp.dot(last_update, basis.u),
+        jnp.dot(last_update, basis.v),
+    ])
+    slope = float(jet.grad @ projected_update)
+    curvature = float(projected_update @ jet.hessian @ projected_update)
+    update_capture = float(
+        jnp.dot(projected_update, projected_update)
+        / jnp.maximum(jnp.dot(last_update, last_update), 1e-12)
+    )
+    directional_scale = (
+        -slope / curvature if slope < 0.0 and curvature > 0.0 else None
+    )
+    proposed_scale = directional_step_scale(
+        jet, projected_update, update_capture
+    )
     atlas_config = {
-        "lr": diagnostics.recommended_lr,
+        "lr": (
+            min(1e-2, max(1e-5, initial_config["lr"] * proposed_scale))
+            if proposed_scale is not None else diagnostics.recommended_lr
+        ),
         "weight_decay": diagnostics.recommended_weight_decay,
     }
     finish("ATLAS", atlas_config, [probe_run], started, 1)
     results["ATLAS"]["diagnostics"] = diagnostics.to_dict()
+    results["ATLAS"]["directional_profile"] = {
+        "slope_per_last_update": slope,
+        "curvature_per_last_update": curvature,
+        "quadratic_optimal_scale": directional_scale,
+        "update_capture_ratio": update_capture,
+        "proposed_scale": proposed_scale,
+    }
 
     # Random and TPE see the same training and validation examples at each
     # candidate horizon. Both get four candidate trials.
@@ -328,7 +353,7 @@ def main():
         ),
         "comparison_valid": False,
         "comparison_limitations": [
-            "Synthetic images and labels are independent; loss has no learnable task signal.",
+            "The color-pattern task is learnable but too simple to establish performance on real data.",
             "One seed and one held-out final batch do not establish a performance advantage.",
             "ATLAS jet work is included in wall time but not converted to training steps.",
             "The successive-halving scheduler uses synchronous promotion rungs.",

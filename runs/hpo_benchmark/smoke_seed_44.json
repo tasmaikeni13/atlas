@@ -1,113 +1,113 @@
 {
   "methods": {
     "ATLAS": {
-      "best_loss": 0.0009243488311767578,
+      "best_loss": 0.039715737104415894,
       "best_config": {
-        "lr": 0.002020221997530869,
+        "lr": 0.0007499999999999999,
         "weight_decay": 0.01
       },
       "selection_steps": 8,
       "final_steps": 8,
       "total_training_steps": 16,
       "selection_validation_losses": [
-        0.16803060472011566
+        0.41843870282173157
       ],
       "selection_segments": 1,
       "diverged_trials": 0,
       "total_trials": 2,
-      "time_seconds": 8.286116030008998,
+      "time_seconds": 8.291949019010644,
       "diagnostics": {
-        "loss": 0.16855072975158691,
-        "grad_norm": 0.5159230828285217,
-        "lambda_max": 2.150843858718872,
-        "lambda_min": 0.7945380210876465,
-        "condition_number": 2.7070370474839867,
-        "anisotropy_ratio": 0.4604855645137333,
-        "flatness_radius": 0.30493730374474476,
-        "eos_margin": 3099.558640503825,
-        "stochastic_snr": 1064.7065095811427,
+        "loss": 0.4194236099720001,
+        "grad_norm": 0.4958232045173645,
+        "lambda_max": 2.3276617527008057,
+        "lambda_min": 0.6768110394477844,
+        "condition_number": 3.4391604407043412,
+        "anisotropy_ratio": 0.5494643577958473,
+        "flatness_radius": 0.29312648659422486,
+        "eos_margin": 2864.1045714358097,
+        "stochastic_snr": 983.3626005514731,
         "stability_verdict": "SLUGGISH_UNDERFIT",
         "recommended_lr": 0.0007499999999999999,
         "recommended_weight_decay": 0.01,
         "recommended_batch_scale": 0.5,
-        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 3099.56 >> 2.0). Landscape can tolerate up to 7.5e-04 with lambda_max = 2.1508. High gradient SNR (1064.7). Batch size can be halved to economize TPU compute without loss."
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 2864.10 >> 2.0). Landscape can tolerate up to 7.5e-04 with lambda_max = 2.3277. High gradient SNR (983.4). Batch size can be halved to economize TPU compute without loss."
       },
       "directional_profile": {
-        "slope_per_last_update": -0.008795090019702911,
-        "curvature_per_last_update": 0.0010727752232924104,
-        "quadratic_optimal_scale": 8.198446262312306,
-        "update_capture_ratio": 0.7965710163116455,
-        "proposed_scale": 6.734073325102898
+        "slope_per_last_update": 0.016959350556135178,
+        "curvature_per_last_update": 0.0029484988190233707,
+        "quadratic_optimal_scale": null,
+        "update_capture_ratio": 0.8116847276687622,
+        "proposed_scale": null
       }
     },
     "Random Search": {
-      "best_loss": 0.0001913309097290039,
+      "best_loss": 0.4551658630371094,
       "best_config": {
-        "lr": 0.003765249501831186,
-        "weight_decay": 0.012362436879527079
+        "lr": 0.00016493475643485214,
+        "weight_decay": 0.08082614105449391
       },
       "selection_steps": 8,
       "final_steps": 8,
       "total_training_steps": 16,
       "selection_validation_losses": [
-        0.15395575761795044,
-        0.12891021370887756,
-        0.31351014971733093,
-        0.18222670257091522
+        0.5949902534484863,
+        0.5038052201271057,
+        0.5924262404441833,
+        0.5868580937385559
       ],
       "selection_segments": 4,
       "diverged_trials": 0,
       "total_trials": 5,
-      "time_seconds": 0.10827826103195548
+      "time_seconds": 0.10972537199268118
     },
     "Optuna TPE": {
-      "best_loss": 0.0025486350059509277,
+      "best_loss": 0.00028759241104125977,
       "best_config": {
-        "lr": 0.001570297088405539,
-        "weight_decay": 0.006251373574521752
+        "lr": 0.0031954089406218953,
+        "weight_decay": 0.0002062473195823179
       },
       "selection_steps": 8,
       "final_steps": 8,
       "total_training_steps": 16,
       "selection_validation_losses": [
-        0.27871251106262207,
-        0.22115524113178253,
-        0.31062841415405273,
-        1.6429119110107422
+        0.4670831561088562,
+        0.5006906986236572,
+        0.5312387347221375,
+        2.6595401763916016
       ],
       "selection_segments": 4,
       "diverged_trials": 0,
       "total_trials": 5,
-      "time_seconds": 0.15400056901853532
+      "time_seconds": 0.15507591800997034
     },
     "Successive Halving": {
-      "best_loss": 0.0014006197452545166,
+      "best_loss": 0.1448753923177719,
       "best_config": {
-        "lr": 0.0018004323821564912,
-        "weight_decay": 0.00061812540349282
+        "lr": 0.000524073223503917,
+        "weight_decay": 0.0038501126397542454
       },
       "selection_steps": 8,
       "final_steps": 8,
       "total_training_steps": 16,
       "selection_validation_losses": [
-        0.22124552726745605,
-        0.31703710556030273,
-        0.24472230672836304,
-        0.24099603295326233,
-        0.24662168323993683,
-        0.1978285312652588,
-        0.05242075026035309
+        0.4684278964996338,
+        0.6754316091537476,
+        0.5044570565223694,
+        0.8509806394577026,
+        0.40419429540634155,
+        0.4377252459526062,
+        0.38448452949523926
       ],
       "selection_segments": 7,
       "diverged_trials": 0,
       "total_trials": 5,
-      "time_seconds": 0.1130314510082826
+      "time_seconds": 0.11325226200278848
     }
   },
   "budget_steps": 16,
   "selection_budget_steps": 8,
   "final_horizon_steps": 8,
-  "seed": 42,
+  "seed": 44,
   "backend": "cpu",
   "smoke_test": true,
   "shared_jit_warmup_excluded_from_timing": true,

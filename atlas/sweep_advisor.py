@@ -17,6 +17,37 @@ from .probe import Jet, JetProbe, CostModel
 from .basis import SubspaceBasis
 
 
+def directional_step_scale(
+    jet: Jet,
+    projected_update: np.ndarray,
+    capture_ratio: float,
+    max_scale: float = 8.0,
+) -> Optional[float]:
+    """Propose a scale from the jet's line minimum within a trust cap.
+
+    The returned factor scales the learning rate that produced the update.
+    It is only a local proposal: future gradients and optimizer state change,
+    and a 2D plane may miss important directions.
+    """
+    update = np.asarray(projected_update, dtype=np.float64)
+    if update.shape != (2,) or not np.all(np.isfinite(update)):
+        raise ValueError("projected_update must be a finite 2-vector")
+    if not np.isfinite(max_scale) or max_scale < 1.0:
+        raise ValueError("max_scale must be finite and at least one")
+    if not np.isfinite(capture_ratio) or capture_ratio < 0.5:
+        return None
+
+    slope = float(np.asarray(jet.grad, dtype=np.float64) @ update)
+    curvature = float(update @ np.asarray(jet.hessian, dtype=np.float64) @ update)
+    if not np.isfinite(slope) or not np.isfinite(curvature):
+        return None
+    if slope >= 0.0 or curvature <= 1e-12:
+        return None
+    optimum = -slope / curvature
+    moderated_scale = 1.0 + min(capture_ratio, 1.0) * (optimum - 1.0)
+    return float(np.clip(moderated_scale, 0.25, max_scale))
+
+
 @dataclasses.dataclass
 class LandscapeDiagnostics:
     """Comprehensive loss landscape diagnostic profile at a training checkpoint."""
@@ -55,7 +86,7 @@ class LandscapeDiagnostics:
 
 
 class LandscapeDiagnosticEngine:
-    """Computes exact loss landscape diagnostics from ATLAS Taylor jets in milliseconds."""
+    """Computes projected loss diagnostics from ATLAS Taylor jets."""
 
     def __init__(
         self,
@@ -80,8 +111,16 @@ class LandscapeDiagnosticEngine:
         delta_l_threshold: float = 0.1
     ) -> LandscapeDiagnostics:
         """Evaluates exact 2D Taylor Jet and returns actionable hyperparameter diagnostics."""
-        jet: Jet = self.probe.evaluate_jet(0.0, 0.0, batch)
+        jet = self.probe.evaluate_jet(0.0, 0.0, batch)
+        return self.analyze_jet(jet, cost_model, delta_l_threshold)
 
+    def analyze_jet(
+        self,
+        jet: Jet,
+        cost_model: Optional[CostModel] = None,
+        delta_l_threshold: float = 0.1,
+    ) -> LandscapeDiagnostics:
+        """Analyze a previously computed jet without repeating the probe."""
         loss = float(jet.loss)
         grad_norm = float(np.linalg.norm(jet.grad))
 

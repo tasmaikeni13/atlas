@@ -1,0 +1,122 @@
+{
+  "methods": {
+    "ATLAS": {
+      "best_loss": 0.002083122730255127,
+      "best_config": {
+        "lr": 0.0024,
+        "weight_decay": 0.02
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        0.5761653780937195
+      ],
+      "selection_segments": 1,
+      "diverged_trials": 0,
+      "total_trials": 2,
+      "time_seconds": 8.223517714999616,
+      "diagnostics": {
+        "loss": 0.5750748515129089,
+        "grad_norm": 1.0514216423034668,
+        "lambda_max": 3.6295382976531982,
+        "lambda_min": -0.1316658854484558,
+        "condition_number": 27.566277212133887,
+        "anisotropy_ratio": 1.0752834122760158,
+        "flatness_radius": 0.23474119233293725,
+        "eos_margin": 1836.7809125963013,
+        "stochastic_snr": 4421.949879616477,
+        "stability_verdict": "ILL_CONDITIONED",
+        "recommended_lr": 0.0007499999999999999,
+        "recommended_weight_decay": 0.02,
+        "recommended_batch_scale": 0.5,
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 1836.78 >> 2.0). Landscape can tolerate up to 7.5e-04 with lambda_max = 3.6295. Basin is highly anisotropic (condition number kappa = 27.6). Recommend increasing weight decay to 0.020 to regularize narrow directions. High gradient SNR (4421.9). Batch size can be halved to economize TPU compute without loss."
+      },
+      "directional_profile": {
+        "slope_per_last_update": -0.036873918026685715,
+        "curvature_per_last_update": 0.0021589472889900208,
+        "quadratic_optimal_scale": 17.079582356980904,
+        "update_capture_ratio": 0.8451915383338928,
+        "proposed_scale": 8.0
+      }
+    },
+    "Random Search": {
+      "best_loss": 0.004581630229949951,
+      "best_config": {
+        "lr": 0.0018004323821564912,
+        "weight_decay": 0.00061812540349282
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        0.6113609075546265,
+        1.105665922164917,
+        0.7431950569152832,
+        0.4329018294811249
+      ],
+      "selection_segments": 4,
+      "diverged_trials": 0,
+      "total_trials": 5,
+      "time_seconds": 0.10789106198353693
+    },
+    "Optuna TPE": {
+      "best_loss": 0.0003426671028137207,
+      "best_config": {
+        "lr": 0.005113097815246205,
+        "weight_decay": 0.09902707035352791
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        1.0988469123840332,
+        1.0965070724487305,
+        1.0469447374343872,
+        0.3941674828529358
+      ],
+      "selection_segments": 4,
+      "diverged_trials": 0,
+      "total_trials": 5,
+      "time_seconds": 0.1536153779597953
+    },
+    "Successive Halving": {
+      "best_loss": 0.3493140637874603,
+      "best_config": {
+        "lr": 0.00016493475643485214,
+        "weight_decay": 0.08082614105449391
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        1.1080530881881714,
+        1.049741268157959,
+        1.106105923652649,
+        1.104097843170166,
+        0.9961116313934326,
+        1.0955936908721924,
+        0.9049142599105835
+      ],
+      "selection_segments": 7,
+      "diverged_trials": 0,
+      "total_trials": 5,
+      "time_seconds": 0.11346499202772975
+    }
+  },
+  "budget_steps": 16,
+  "selection_budget_steps": 8,
+  "final_horizon_steps": 8,
+  "seed": 43,
+  "backend": "cpu",
+  "smoke_test": true,
+  "shared_jit_warmup_excluded_from_timing": true,
+  "budget_protocol_valid": true,
+  "comparison_valid": false,
+  "comparison_limitations": [
+    "The color-pattern task is learnable but too simple to establish performance on real data.",
+    "One seed and one held-out final batch do not establish a performance advantage.",
+    "ATLAS jet work is included in wall time but not converted to training steps.",
+    "The successive-halving scheduler uses synchronous promotion rungs."
+  ]
+}
