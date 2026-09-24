@@ -114,6 +114,8 @@ Evaluating a jet on a mini-batch of size $B$ incurs hardware execution time mode
 \end{equation}
 where $\tau > 0$ represents fixed kernel invocation and systolic dispatch overhead, and $\kappa > 0$ denotes marginal per-sample matrix multiplication cost on TPU. Under a total wall-clock compute budget $C$, selecting $N$ anchors with batch size $B$ must satisfy $N (\tau + \kappa B) \le C$.
 
+The current calibration times completed jet outputs after warming each batch shape. This model covers steady-state jet execution; compilation, calibration, reconstruction, and rendering add to total elapsed time. Its scalar-loss variance and radial Hessian-slope estimates are empirical allocation proxies, not certificates for the global risk assumptions below. Archived landscape reports predate this correction and have invalid nominal allocations.
+
 The reconstruction error $E(N, B)$ over a domain of radius $R$ comprises two competing components:
 \begin{enumerate}
     \item \textbf{Approximation Error:} By second-order Taylor remainder theory, interpolating between $N$ anchors in 2D domain of area $\pi R^2$ yields an average anchor spacing $h \approx R / \sqrt{N}$. The degree-2 Taylor remainder is bounded by:
@@ -259,7 +261,7 @@ We benchmark ATLAS against three competitive baselines:
 \begin{table}[t]
 \centering
 \small
-\caption{\textbf{Archived Comparative Benchmark.} Relative $L_2$ error and Spearman rank correlation ($\rho_s$) use a 625-coordinate reference evaluated on a fixed subset batch. The figures do not establish full-dataset accuracy or equal-budget peer dominance.}
+\caption{\textbf{Archived Comparative Benchmark.} Relative $L_2$ error and Spearman rank correlation ($\rho_s$) use a 625-coordinate reference evaluated on a fixed subset batch. Legacy jet calibration did not time completed outputs; nominal allocations are invalid. The figures do not establish full-dataset accuracy or equal-budget peer dominance.}
 \label{tab:benchmark_results}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llcccc}

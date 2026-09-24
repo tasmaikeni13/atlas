@@ -18,7 +18,7 @@
         "conditional_surrogate_rate": "Theta(C^(-3/8)) when tau=0 and limits are inactive",
         "lean4_sorries": 0
       },
-      "known_gap": "Lean build passes; spatial/stochastic risk bounds and peer-rate claims remain unproved."
+      "known_gap": "Lean build passes; fitted scalar-loss variance and radial Hessian slope are empirical proxies, while spatial/stochastic risk bounds and peer-rate claims remain unproved."
     },
     "2": {
       "id": 2,
@@ -61,7 +61,7 @@
         "jet_vjp_passes": 2,
         "finite_difference_noise": 0.0
       },
-      "known_gap": "TPU/GPU numerical kernel and timing checks are not established by import checks."
+      "known_gap": "Completed-output jet calibration and a small CPU recorder render pass; TPU/GPU numerical and timing checks remain unverified."
     },
     "4": {
       "id": 4,
@@ -151,7 +151,7 @@
         "transformer_spearman_rho": 0.9998,
         "transformer_relative_l2_error": 0.0474
       },
-      "known_gap": "ViT ImageNet archived result has ATLAS below grid on L2 and Spearman."
+      "known_gap": "Three archived ATLAS allocations used the invalid marginal-cost floor; the ViT ImageNet result also has ATLAS below grid on L2 and Spearman."
     },
     "8": {
       "id": 8,

@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Phase 3 implements, optimizes, profiles, and benchmarks the complete hardware-accelerated diagnostic kernel suite on Google Cloud TPU v4 Pod slices (with seamless fallback to TPU v5e or NVIDIA GPUs). It delivers the exact forward-over-reverse automatic differentiation Taylor jet engine and five publication-grade, hardware-vectorized baseline kernels to ensure an uncompromised, apples-to-apples comparison against all state-of-the-art loss landscape competitors.
+Phase 3 targets hardware-accelerated diagnostic kernels on TPU and GPU. The exact forward-over-reverse Taylor jet engine and baseline kernels have CPU smoke coverage. The archived TPU latency values below have not been independently verified in this audit, and equal-budget comparisons remain open.
 
 ---
 
@@ -74,7 +74,11 @@ def make_jet_probe(apply_fn, loss_fn, basis):
 **Key Execution Features:**
 1. **Compilation Graph:** The production `JetProbe` calls `jax.jvp` twice on a reverse-mode parameter gradient, once per subspace direction. The code block above is an equivalent coordinate-space sketch, not the implementation.
 2. **No Finite-Difference Discretization:** The projected Hessian is differentiated by autodiff on a selected batch; floating-point and batch-sampling error remain.
-3. **Execution Latency:** Sub-second per jet evaluation ($<0.05$s on ViT, $<0.15$s on 125M Transformer once JIT-compiled).
+3. **Execution Latency:** The archived ViT and 125M TPU latency claims require completed-output timing on the target hardware before they can be used for budget comparisons.
+
+### Cost Calibration
+
+Jet calibration now warms each batch shape and waits for all jet outputs before recording execution time. It rejects an unresolved affine fit instead of replacing a nonpositive marginal cost with a small constant. The measured scalar-loss variance and radial Hessian slope are empirical allocation proxies; neither establishes the global derivative or reconstruction-risk bounds used by the theory surrogate. The high-level recorder derives calibration sizes from actual evaluation batches and caps its chosen probe batch at the available examples. Its budget covers steady-state jet calls; total elapsed time also includes compilation, calibration, reconstruction, and rendering. A small CPU end-to-end render passed with these checks. TPU timing remains unverified.
 
 ---
 
@@ -120,7 +124,7 @@ make smoke_vit
 
 ### Pod Hardware Performance Criteria
 
-| Metric | Required Threshold | Observed on TPU v4 |
+| Metric | Required Threshold | Archived TPU claim (unverified) |
 | :--- | :---: | :---: |
 | **Jet Evaluation Time (ViT, Post-JIT)** | $< 0.05$ s | **$0.008$ s** |
 | **Jet Evaluation Time (125M Transformer, Post-JIT)** | $< 0.20$ s | **$0.024$ s** |

@@ -152,6 +152,8 @@ These archived plots used deterministic Halton points and 14 holdouts. Their DKW
 
 Archived comparisons against a 625-coordinate fixed evaluation-batch reference across nominal budget settings:
 
+These runs used an older jet cost calibration that did not wait for completed outputs and recorded the marginal cost at a floor of 1e-8 seconds per example. Their nominal allocations are invalid until recalibrated; measured errors and elapsed times are preserved as archived observations.
+
 ### Vision Transformer (ViT / CIFAR-10, 546,186 Parameters)
 | Method | Wall Budget | Relative $L_2$ Error $\downarrow$ | Spearman $\rho_s \uparrow$ | Curvature Error $\downarrow$ | Latency |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -186,8 +188,10 @@ These are archived small-model results. They do not establish universal peer dom
 ## 📐 Mathematical Foundations
 
 ### 1. Continuous Budget Allocation Surrogate
-Let $C$ be the wall-clock compute budget, $N$ the number of anchors, and $B$ the mini-batch size. Under hardware cost model $t(B) = \tau + \kappa B$, the total error bound balances spatial discretization against stochastic variance:
+Let $C$ be the steady-state jet budget, $N$ the number of anchors, and $B$ the mini-batch size. Under cost model $t(B) = \tau + \kappa B$, the proposed error surrogate balances spatial discretization against stochastic variance:
 $$E(N, B) \le \frac{c_1 M_3 R^3}{N^{3/2}} + \frac{c_2 \sigma}{\sqrt{B}}.$$
+
+Calibration times completed jet calls and fits empirical scalar-loss variance and radial Hessian-slope proxies. These estimates do not verify the global assumptions needed to turn the surrogate into a reconstruction-risk bound. Total elapsed time also includes compilation, calibration, reconstruction, and rendering.
 
 When dispatch overhead is neglected, substituting $B=C/(\kappa N)$ and applying weighted AM-GM gives the minimum of this continuous error surrogate:
 $$\boxed{E_{\mathrm{bound}} \ge 4 \left( \frac{c_1 M_3 R^3 (c_2 \sigma)^3}{27} \right)^{1/4} \left(\frac{\kappa}{C}\right)^{3/8} = \Theta(C^{-3/8})}.$$

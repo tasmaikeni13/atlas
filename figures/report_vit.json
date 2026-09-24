@@ -45,5 +45,7 @@
     "sigma2": 0.040343733622177934,
     "m3": 0.2725938856601715,
     "loss_relief": 0.63346266746521
-  }
+  },
+  "budget_allocation_valid": false,
+  "calibration_warning": "Legacy jet cost calibration waited on input coordinates, not outputs; the recorded kappa=1e-8 is a floor. Recalibrate with completed jet timing before treating this allocation as feasible."
 }

@@ -41,6 +41,8 @@ where $\tau > 0$ represents kernel dispatch latency and host-device synchronizat
 Under a total wall-clock budget $C$, choosing $N$ anchors with mini-batch size $B$ must satisfy the budget constraint:
 $$N (\tau + \kappa B) \le C.$$
 
+The implementation now fits this execution model from completed jet calls after warming each batch shape. The resulting budget covers steady-state jet evaluations; compilation, calibration, reconstruction, and rendering also contribute to total elapsed time. Its measured scalar-loss variance and radial Hessian slope are allocation proxies, not evidence that the global assumptions below hold.
+
 ### 3.2 Competing Error Components
 The expected reconstruction error $E(N, B)$ over a domain of radius $R$ balances spatial discretization against stochastic mini-batch noise:
 1. **Spatial Approximation Error ($E_{\text{approx}}$):**

@@ -4,7 +4,9 @@
 
 Phase 7 targets a large-scale competitive benchmark across architectures and wall-clock budgets. The tracked small-model comparisons use a 625-coordinate reference evaluated on a fixed subset batch, not full-dataset ground truth. A full equal-budget replication across all architectures is still required.
 
-The **Strict Peer Domination Invariant** is a target, not an established result. The tracked ViT ImageNet benchmark contradicts it at a 2-second budget: ATLAS has relative $L_2$ error 0.000508 and Spearman 0.715, versus grid error 0.000499 and Spearman 0.727. The archived 2-second Lanczos and Hutchinson timings exceed that budget. See `phases/evidence_audit.md`.
+All three archived ATLAS landscape reports record a marginal batch cost at the former calibration floor of 1e-8 seconds per example. The former timing path waited on input coordinates rather than completed jet outputs, so their anchor and batch allocations are marked invalid until recalibrated. The measured errors and elapsed times remain archived, but their nominal budgets do not establish equal-cost comparisons.
+
+The **Strict Peer Domination Invariant** is a target, not an established result. The tracked ViT ImageNet benchmark contradicts it at a nominal 2-second setting: ATLAS has relative $L_2$ error 0.000508 and Spearman 0.715, versus grid error 0.000499 and Spearman 0.727. The archived Lanczos and Hutchinson timings exceed that setting. See `phases/evidence_audit.md`.
 
 ---
 

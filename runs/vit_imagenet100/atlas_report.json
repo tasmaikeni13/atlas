@@ -50,5 +50,7 @@
     "loss_relief": 0.6017465591430664
   },
   "budget_seconds": 2.0,
-  "elapsed_seconds": 180.77583867299836
+  "elapsed_seconds": 180.77583867299836,
+  "budget_allocation_valid": false,
+  "calibration_warning": "Legacy jet cost calibration waited on input coordinates, not outputs; the recorded kappa=1e-8 is a floor. Recalibrate with completed jet timing before treating this allocation as feasible."
 }

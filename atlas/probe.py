@@ -52,8 +52,8 @@ class CostModel:
     """Empirical cost and smoothness characteristics of the loss surface."""
     tau: float       # Base kernel/launch overhead (seconds)
     kappa: float     # Marginal cost per evaluation example (seconds/example)
-    sigma2: float    # Stochastic batch variance of the loss
-    m3: float        # Estimated 3rd-derivative Lipschitz bound
+    sigma2: float    # Estimated per-example scalar-loss variance proxy
+    m3: float        # Empirical radial Hessian-slope proxy, not a global bound
     loss_relief: float  # Observed surface dynamic range max(L) - min(L)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -172,46 +172,82 @@ class JetProbe:
         batch_sizes: Sequence[int],
         radius: float = 1.0
     ) -> CostModel:
-        """Profiles TPU throughput and measures loss variance and Lipschitz constants."""
-        # 1. Warm-up JIT compilation
-        coords0 = jnp.array([0.0, 0.0], dtype=jnp.float32)
-        _ = self._jit_jet(coords0, sample_batches[0])
+        """Profile completed jet execution and empirical loss-surface proxies.
 
-        # 2. Measure execution time across batch sizes
+        Sample batches should be independent draws from one data distribution.
+        Each batch size must match its batch's leading dimension. The affine
+        cost fit excludes one-time JIT compilation for each batch shape.
+        """
+        if len(sample_batches) != len(batch_sizes) or len(batch_sizes) < 2:
+            raise ValueError("Provide at least two batches and matching sizes")
+        if not np.isfinite(radius) or radius <= 0:
+            raise ValueError("Radius must be positive and finite")
+        if len(set(batch_sizes)) != len(batch_sizes):
+            raise ValueError("Batch sizes must be distinct")
+        for batch, size in zip(sample_batches, batch_sizes):
+            leaves = jax.tree_util.tree_leaves(batch)
+            shape = getattr(leaves[0], "shape", ()) if leaves else ()
+            if size <= 0 or not shape or shape[0] != size:
+                raise ValueError("Each batch must match its positive batch size")
+
+        # Warm up each shape separately, then wait for compilation and execution.
+        coords0 = jnp.array([0.0, 0.0], dtype=jnp.float32)
+        for batch in sample_batches:
+            outputs = self._jit_jet(coords0, batch)
+            for output in outputs:
+                output.block_until_ready()
+
+        # Measure completed execution time across batch sizes.
         times = []
-        for batch in sample_batches[:len(batch_sizes)]:
+        for batch in sample_batches:
             t0 = time.perf_counter()
             for _ in range(5):
-                _ = self._jit_jet(coords0, batch)
-                jax.block_until_ready(coords0)
+                outputs = self._jit_jet(coords0, batch)
+                for output in outputs:
+                    output.block_until_ready()
             t1 = time.perf_counter()
             times.append((t1 - t0) / 5.0)
 
         # Fit linear model: t(B) = tau + kappa * B
-        B_arr = np.array(batch_sizes[:len(times)], dtype=np.float64)
+        B_arr = np.array(batch_sizes, dtype=np.float64)
         T_arr = np.array(times, dtype=np.float64)
-        if len(B_arr) > 1:
-            poly = np.polyfit(B_arr, T_arr, 1)
-            kappa = max(float(poly[0]), 1e-8)
-            tau = max(float(poly[1]), 1e-5)
-        else:
-            tau = float(T_arr[0] * 0.2)
-            kappa = float((T_arr[0] * 0.8) / max(B_arr[0], 1))
+        kappa, tau = (float(value) for value in np.polyfit(B_arr, T_arr, 1))
+        if not np.isfinite(kappa) or not np.isfinite(tau):
+            raise ValueError("Affine cost fit produced nonfinite coefficients")
+        if kappa <= 0 or tau < 0:
+            raise ValueError(
+                "Marginal batch cost or dispatch overhead was not resolved; "
+                "calibrate with more separated batch sizes"
+            )
 
-        # 3. Measure batch variance sigma2 at origin
-        losses = [self.evaluate_loss(0.0, 0.0, b) for b in sample_batches[:10]]
-        sigma2 = float(np.var(losses, ddof=1)) if len(losses) > 1 else 1e-4
+        # Estimate per-example scalar-loss variance from heterogeneous batch
+        # means: Var(L_B) = sigma2 / B for independent examples.
+        losses = np.array(
+            [self.evaluate_loss(0.0, 0.0, b) for b in sample_batches],
+            dtype=np.float64,
+        )
+        weights = np.asarray(batch_sizes, dtype=np.float64)
+        mean_loss = float(np.average(losses, weights=weights))
+        sigma2 = float(
+            np.sum(weights * (losses - mean_loss) ** 2) / (len(losses) - 1)
+        )
+        if not np.isfinite(sigma2):
+            raise ValueError("Batch loss variance is not finite")
 
-        # 4. Measure M3 (third derivative) along radial test points
+        # Measure radial change of the Hessian on one fixed batch.
         h = 0.1 * radius
         j_pos = self.evaluate_jet(h, 0.0, sample_batches[0])
         j_neg = self.evaluate_jet(-h, 0.0, sample_batches[0])
         j_zero = self.evaluate_jet(0.0, 0.0, sample_batches[0])
-        # Second difference of Hessian approximates 3rd derivative
         diff_h = np.linalg.norm(j_pos.hess - j_neg.hess) / (2.0 * h + 1e-12)
-        m3 = max(float(diff_h), 0.01)
+        m3 = float(diff_h)
 
-        relief = max(max(losses) - min(losses), 0.1)
+        relief = float(
+            max(j_pos.loss, j_neg.loss, j_zero.loss)
+            - min(j_pos.loss, j_neg.loss, j_zero.loss)
+        )
+        if not np.isfinite(m3) or not np.isfinite(relief):
+            raise ValueError("Jet smoothness or loss relief is not finite")
 
         return CostModel(
             tau=tau,
