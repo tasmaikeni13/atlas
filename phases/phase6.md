@@ -1,89 +1,54 @@
-# Phase 6: Automated Hyperparameter Sweep Competition: Curvature-Guided Diagnostics vs. Black-Box HPO
+# Phase 6: Hyperparameter Sweep Comparison
 
-## 1. Executive Summary
+## Purpose
 
-Phase 6 subjects ATLAS loss landscape diagnostics to a rigorous, head-to-head competition against industry-standard Hyperparameter Optimization (HPO) and sweep methods. While traditional HPO algorithms treat the neural network as an expensive black-box mapping hyperparameters $\lambda \to \mathcal{L}$, **ATLAS** leverages exact second-order curvature ($\lambda_{\max}(H)$, condition number $\kappa$, and Edge-of-Stability margin $\mu_{\text{EoS}}$) extracted in $<0.05$s on TPUs/GPUs.
+This phase tests whether the projected Taylor-jet diagnostics improve
+learning-rate and weight-decay selection under a fixed compute budget.
+Curvature is a heuristic for AdamW: the top eigenvalue of a two-dimensional
+projected Hessian is not the top eigenvalue of the full Hessian, and
+\(2/\lambda_{\max}\) is not an optimal AdamW learning rate theorem.
 
-This phase tests the proposed advantage of **second-order landscape-guided sweeping** over classical black-box optimization. The archived one-seed, 16-step smoke report does not measure the stated 2.5x target-loss speedup or divergence-prevention advantage:
-1. **Random Search HPO:** Log-uniform stochastic parameter sampling.
-2. **Optuna TPE (Tree-structured Parzen Estimator):** Bayesian surrogate optimization over historical trial losses.
-3. **ASHA (Asynchronous Successive Halving Algorithm):** Multi-fidelity early-stopping pruner.
+## Implemented smoke protocol
 
----
+Run from the repository root with the optional HPO dependency installed:
 
-## 2. Theoretical Superiority: Second-Order vs. Zeroth-Order HPO
+    .venv/bin/python -m pip install -e '.[hpo]'
+    JAX_PLATFORMS=cpu .venv/bin/python experiments/10_hpo_peer_benchmark.py --smoke_test
 
-### 2.1 The Black-Box Blindness Pathology
-Standard HPO frameworks (Optuna, Ray Tune, Hyperband) observe only scalar evaluation losses:
-$$\text{Observed: } y_k = \mathcal{L}(\theta(\eta_k, \lambda_{\text{wd}, k})).$$
-Because they lack curvature information:
-- They cannot distinguish between an optimizer that is **stuck on a flat plateau** ($\lambda_{\max} \approx 0$) versus one that is **oscillating violently across canyon walls** ($\eta > 2/\lambda_{\max}$).
-- To detect instability or sub-optimality, black-box algorithms require running trials for dozens of full epochs, wasting over $70\%$ of cluster compute on non-viable trajectories.
+The CPU smoke run uses a 16-step training budget per method. Each method spends
+8 steps selecting a configuration and then retrains its selected configuration
+from common initial weights for 8 steps. The final loss uses a shared batch
+that was not used to select hyperparameters. Shared JIT warmup is excluded
+from timing; ATLAS jet work is included. The methods are:
 
-### 2.2 Analytical Learning Rate Synthesis via Taylor Jets
-By computing the exact 2D projected Taylor jet $J = (g, \nabla g, H)$ after only $10\text{--}15$ exploratory training steps, ATLAS computes the exact top eigenvalue $\lambda_{\max}(H)$ and Edge of Stability margin:
-$$\mu_{\text{EoS}} = \frac{2}{\eta \cdot \lambda_{\max}(H)}.$$
-By optimization theory (Cohen et al., 2021), the optimal learning rate that maximizes descent velocity while strictly avoiding divergence is:
-$$\eta^* = \frac{2}{\lambda_{\max}(H)} \times \gamma_{\text{opt}}, \quad \text{where } \gamma_{\text{opt}} \in [0.70, 0.85].$$
+1. ATLAS: one 8-step exploratory trajectory, a projected Taylor jet, and one
+   recommended configuration.
+2. Random Search: four log-uniform candidates trained for 2 steps each.
+3. Optuna TPE: four candidates from Optuna's seeded TPE sampler, also trained
+   for 2 steps each. Three trials are startup samples.
+4. Successive Halving: four candidates with synchronous 1-, 2-, and 4-step
+   promotion rungs and retained optimizer state.
 
-Consequently, ATLAS synthesizes the optimal learning rate **analytically in a single probe pass**, bypassing dozens of trial-and-error evaluations.
+| Method | Final validation loss | Training steps |
+| --- | ---: | ---: |
+| ATLAS | 5.0034 | 16 |
+| Random Search | 4.6427 | 16 |
+| Optuna TPE | 4.7084 | 16 |
+| Successive Halving | 4.6755 | 16 |
 
----
+These values are smoke evidence only. The synthetic images and labels are
+independent, so the task has no learnable signal. There is one seed and one
+final evaluation batch. The measured ATLAS time includes jet compilation,
+and the report does not convert that cost into equivalent training steps.
+The scheduler is synchronous successive halving, not asynchronous ASHA.
+No method diverged. The phase is incomplete: the run does not support a
+target-loss speedup, an optimal learning-rate claim, or a divergence-prevention
+rate.
 
-## 3. Peer Competitor Baseline Implementations (`atlas/baselines/hpo.py`)
+## Next validation
 
-All competitor methods are standardized in `atlas/baselines/hpo.py`:
-1. `RandomSearchHPO`: Samples $\log_{10}(\eta) \sim \mathcal{U}(-5, -2)$ and $\log_{10}(\lambda_{\text{wd}}) \sim \mathcal{U}(-4, -1)$.
-2. `OptunaTPEBaseline`: A local TPE-style surrogate. It does not invoke the Optuna package and is not yet a validated reference implementation of Optuna TPE.
-3. `ASHABaseline`: Enforces aggressive successive halving across fidelity rungs, pruning underperforming configurations based on intermediate scalar loss.
-
----
-
-## 4. Head-to-Head Benchmark Protocol (`experiments/10_hpo_peer_benchmark.py`)
-
-The current smoke driver gives each method the same aggregate training-step count on a synthetic Vision Transformer task, but per-trial horizons differ. Its final-loss table is a pipeline check, not a fair HPO ranking:
-
-```bash
-# Execute peer HPO benchmark on TPU/GPU:
-python experiments/10_hpo_peer_benchmark.py
-
-# Fast verification / smoke test:
-python experiments/10_hpo_peer_benchmark.py --smoke_test
-```
-
-### Quantitative Domination Invariants (ATLAS vs. HPO Peers)
-
-| Metric | Target Criterion | Random Search | Optuna TPE | ASHA | ATLAS (Ours) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Exploratory Steps to Optimal LR** | $\le 15$ steps | $45 - 90$ steps | $30 - 60$ steps | $25 - 45$ steps | **$\le 15$ steps** |
-| **Divergence Prevention Rate** | **$100\%$ (0 failures)** | $25\% - 40\%$ fail | $15\% - 25\%$ fail | $10\% - 20\%$ fail | **$100\%$ (0 failures)** |
-| **Edge-of-Stability Margin ($\mu_{\text{EoS}}$)** | $[0.9, 2.5]$ | Chaotic ($0.05 - 8.5$) | Sub-optimal ($0.4 - 3.8$) | Varied | **$1.2 - 1.8$ (Optimal)** |
-| **Compute Speedup to Target Loss** | $\ge \mathbf{2.5\times}$ | $1.0\times$ (baseline) | $1.4\times$ | $1.7\times$ | **$\mathbf{2.8\times - 3.5\times}$** |
-
----
-
-## 5. Autonomous Diagnosis, Triage & Self-Correcting Loop
-
-If the benchmark runner (`experiments/10_hpo_peer_benchmark.py`) detects that an HPO peer achieved a lower loss or ATLAS failed to dominate:
-
-```mermaid
-flowchart TD
-    A["HPO Benchmark Failure / Missed Invariant"] --> B{"Identify Failure Category"}
-    
-    B -- "ATLAS Trial Diverged" --> C["Check EoS damping: reduce gamma_opt from 0.75 to 0.60 in sweep_advisor.py"]
-    B -- "Optuna Found Lower Loss" --> D["Examine Condition Number: increase recommended weight decay (2.0x)"]
-    B -- "Probe Steps Insufficient" --> E["Increase trajectory snapshot count from 10 to 15 in basis.py"]
-    
-    C --> F["Update atlas/sweep_advisor.py"]
-    D --> F
-    E --> F
-    F --> G["Invalidate Downstream (Phase 7, 8, 9)"]
-    G --> H["Re-run experiments/10_hpo_peer_benchmark.py"]
-```
-
-### Self-Correction Remake Protocol
-1. **Curvature Misestimation:** If $\lambda_{\max}$ is under-estimated due to high gradient noise:
-   - Increase mini-batch evaluation size in `LandscapeDiagnosticEngine` according to the cost model $B^* \propto \sqrt{\sigma}$.
-2. **Subspace Drift in Early Iterations:** If the first 5 steps exhibit severe non-linear drift:
-   - Use exponential weighting on trajectory displacement vectors $X_t = \gamma^{T-t} (\theta_t - \bar{\theta})$ in `trajectory_pca`.
-3. Re-execute the benchmark until **100% divergence prevention** and **$\ge 2.5\times$ sample efficiency** are verified.
+Use a learnable task with a separate validation set, multiple seeds, matched
+aggregate compute including diagnostic cost, and a common final horizon.
+Report target-loss time and confidence intervals alongside final validation
+loss. Compare against an actual asynchronous scheduler if claiming ASHA.
+Update the paper and downstream phase evidence from those measured results.

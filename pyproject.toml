@@ -29,6 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 fineweb = ["datasets", "tiktoken"]
+hpo = ["optuna>=4,<5"]
 
 [project.urls]
 Homepage = "https://github.com/tasmaikeni13/atlas"

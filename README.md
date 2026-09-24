@@ -283,11 +283,11 @@ To enable educated, mathematically grounded hyperparameter sweeps, ATLAS provide
 - **ImageNet-100 Pipeline:** Streaming reader for HuggingFace `claudf/imagenet-100` with standard ImageNet normalization and offline synthetic generator fallbacks.
 
 ### Landscape-Guided Hyperparameter Diagnostic Engine
-Instead of blind grid search or trial-and-error, ATLAS extracts exact second-order geometric diagnostics in **<1 second** per trial to guide hyperparameter selection:
-1. **Edge-of-Stability Margin ($\mu_{\text{EoS}} = \frac{2}{\eta \lambda_{\max}}$):** Detects whether the optimizer is oscillating across steep ravine walls ($\mu < 0.9$), operating at optimal speed along the edge of stability ($0.9 \le \mu \le 2.5$), or moving sluggishly under an overly conservative learning rate ($\mu \gg 2.5$).
-2. **Basin Conditioning ($\kappa = \frac{\lambda_{\max}}{\lambda_{\min}}$):** Measures directional anisotropy. If $\kappa > 25$, the basin is an ill-conditioned canyon, signaling an immediate need for higher weight decay or momentum smoothing.
-3. **Basin Flatness Radius ($R_{\text{flat}} = \sqrt{\frac{2 \Delta \mathcal{L}}{\lambda_{\max}}}$):** Quantifies minimum basin width. Wider flat basins correlate directly with superior out-of-distribution generalization.
-4. **Stochastic SNR ($\frac{\|\nabla \mathcal{L}\|^2}{\sigma^2 / B}$):** Identifies whether mini-batch gradient noise overwhelms descent direction or if batch size can be halved to save compute.
+ATLAS extracts exact projected second-order geometric diagnostics to guide hyperparameter selection. The current CPU HPO smoke report records the diagnostic cost and does not establish a speedup:
+1. **Projected curvature margin ($\mu_{\text{EoS}} = \frac{2}{\eta \lambda_{\max}}$):** A local heuristic based on the largest eigenvalue of the two-dimensional projected Hessian when that eigenvalue is positive. It does not certify stability of AdamW or the full model.
+2. **Projected conditioning:** Summarizes anisotropy in the selected two-dimensional plane. Its relationship to optimizer stability and weight decay needs empirical validation.
+3. **Local flatness radius:** Uses a quadratic approximation when projected curvature is positive. It is not a measured out-of-distribution generalization score.
+4. **Stochastic SNR:** Compares projected gradient magnitude with an assumed noise scale. The default scale is a placeholder unless supplied by a fitted cost model.
 
 ```bash
 # Run automated 6-stage smoke test on ViT architecture and sweep advisor:

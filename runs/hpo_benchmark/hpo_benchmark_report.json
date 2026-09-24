@@ -1,45 +1,115 @@
 {
   "methods": {
-    "ATLAS (Ours)": {
-      "best_loss": 4.205503463745117,
-      "steps_to_optimal_lr": 4,
+    "ATLAS": {
+      "best_loss": 5.003429412841797,
+      "best_config": {
+        "lr": 0.0007499999999999999,
+        "weight_decay": 0.01
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        5.577361106872559
+      ],
+      "selection_segments": 1,
       "diverged_trials": 0,
       "total_trials": 2,
-      "time_seconds": 15.45746374130249,
-      "recommended_lr": 0.0007499999999999999
+      "time_seconds": 8.256885952025186,
+      "diagnostics": {
+        "loss": 5.57923698425293,
+        "grad_norm": 1.6300311088562012,
+        "lambda_max": -0.8251582384109497,
+        "lambda_min": -1.626159906387329,
+        "condition_number": 0.5074274892461949,
+        "anisotropy_ratio": 0.3267636514975067,
+        "flatness_radius": 5.0,
+        "eos_margin": 100.0,
+        "stochastic_snr": 10628.005663355907,
+        "stability_verdict": "SLUGGISH_UNDERFIT",
+        "recommended_lr": 0.0007499999999999999,
+        "recommended_weight_decay": 0.01,
+        "recommended_batch_scale": 0.5,
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 100.00 >> 2.0). Landscape can tolerate up to 7.5e-04 with lambda_max = -0.8252. High gradient SNR (10628.0). Batch size can be halved to economize TPU compute without loss."
+      }
     },
     "Random Search": {
-      "best_loss": 4.938910484313965,
-      "diverged_trials": 0,
-      "total_trials": 4,
-      "time_seconds": 13.707364320755005,
+      "best_loss": 4.642697811126709,
       "best_config": {
         "lr": 0.002098302729986613,
         "weight_decay": 0.0020731719263694525
-      }
-    },
-    "Optuna TPE": {
-      "best_loss": 4.741390228271484,
-      "diverged_trials": 0,
-      "total_trials": 4,
-      "time_seconds": 13.857832908630371,
-      "best_config": {
-        "lr": 0.002098302729986613,
-        "weight_decay": 0.0020731719263694525
-      }
-    },
-    "ASHA": {
-      "best_loss": 4.716709613800049,
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        5.300389289855957,
+        5.332528591156006,
+        5.690827369689941,
+        5.308274269104004
+      ],
+      "selection_segments": 4,
       "diverged_trials": 0,
       "total_trials": 5,
-      "time_seconds": 27.76780605316162
+      "time_seconds": 0.10951376101002097
+    },
+    "Optuna TPE": {
+      "best_loss": 4.708402633666992,
+      "best_config": {
+        "lr": 0.001570297088405539,
+        "weight_decay": 0.006251373574521752
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        5.679668426513672,
+        5.34793758392334,
+        5.685805320739746,
+        5.708914756774902
+      ],
+      "selection_segments": 4,
+      "diverged_trials": 0,
+      "total_trials": 5,
+      "time_seconds": 0.15485670900670812
+    },
+    "Successive Halving": {
+      "best_loss": 4.675503730773926,
+      "best_config": {
+        "lr": 0.0018004323821564912,
+        "weight_decay": 0.00061812540349282
+      },
+      "selection_steps": 8,
+      "final_steps": 8,
+      "total_training_steps": 16,
+      "selection_validation_losses": [
+        5.4509758949279785,
+        5.688038349151611,
+        5.568466663360596,
+        5.130336761474609,
+        5.316521644592285,
+        5.504892349243164,
+        5.53981876373291
+      ],
+      "selection_segments": 7,
+      "diverged_trials": 0,
+      "total_trials": 5,
+      "time_seconds": 0.1146297010127455
     }
   },
   "budget_steps": 16,
+  "selection_budget_steps": 8,
+  "final_horizon_steps": 8,
+  "seed": 42,
+  "backend": "cpu",
+  "smoke_test": true,
+  "shared_jit_warmup_excluded_from_timing": true,
+  "budget_protocol_valid": true,
   "comparison_valid": false,
   "comparison_limitations": [
-    "Final losses are measured after different per-trial training horizons.",
-    "One seed and no divergent peer trial cannot establish a speedup or prevention rate.",
-    "The OptunaTPEBaseline is a local TPE-style surrogate, not the Optuna package."
+    "Synthetic images and labels are independent; loss has no learnable task signal.",
+    "One seed and one held-out final batch do not establish a performance advantage.",
+    "ATLAS jet work is included in wall time but not converted to training steps.",
+    "The successive-halving scheduler uses synchronous promotion rungs."
   ]
 }

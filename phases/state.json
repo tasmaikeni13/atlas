@@ -126,7 +126,7 @@
         "hpo_divergence_prevention": 1.0,
         "eos_margin_window": "[0.9, 2.5]"
       },
-      "known_gap": "HPO trial horizons differ; target-loss speedup and divergence-prevention advantage are unmeasured."
+      "known_gap": "Equal-horizon HPO smoke uses unlearnable synthetic data and one seed; target-loss speedup and divergence-prevention advantage are unmeasured."
     },
     "7": {
       "id": 7,

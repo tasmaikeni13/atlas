@@ -168,9 +168,9 @@ To be publishable in top-tier machine learning venues (NeurIPS, ICML, ICLR, JMLR
 ### 5. Hutchinson Stochastic Trace (`TpuHutchinsonTrace`)
 - **Variance Interpretation:** ATLAS has no random-vector approximation conditional on a fixed batch. Mini-batch Hessians still have sampling variance, and the Hutchinson baseline estimates a different full-space quantity.
 
-### 6. Hyperparameter Sweep Baselines (`RandomSearchHPO`, `OptunaTPEBaseline`, `ASHABaseline`)
-- **Sample Efficiency Invariant:** ATLAS Curvature-Guided Sweep Advisor requires $\le 15$ exploratory probe steps to synthesize optimal stable learning rates ($\eta^* = \frac{2}{\lambda_{\max}} \times \gamma_{\text{opt}}$), achieving target loss with $\ge \mathbf{2.5\times}$ fewer total training steps than Optuna TPE or Random Search.
-- **Stability & Divergence Prevention Invariant:** ATLAS achieves **$100\%$ divergence prevention** (0 diverged trials) by constraining learning rates to the Edge-of-Stability window ($\mu_{\text{EoS}} \in [0.9, 2.5]$), whereas Random Search and black-box HPO incur $20\%\text{--}40\%$ divergence rates during exploratory sweeping.
+### 6. Hyperparameter Sweep Baselines (Random Search, Optuna TPE, Successive Halving)
+- **Current evidence:** The revised one-seed CPU smoke compares equal final training horizons and uses Optuna TPE. ATLAS had a higher final loss than all three peers on synthetic data with independent images and labels.
+- **Open targets:** A target-loss speedup and zero divergence rate require multiple seeds, a learnable task, and compute accounting for the diagnostic jet. The current smoke run establishes neither target.
 
 ---
 
@@ -185,7 +185,7 @@ The research and publication program is partitioned into 9 sequential, self-cont
 | **03** | [`phase3.md`](file:///home/tasma/atlas/phases/phase3.md) | **Hardware Pod Architecture, TPU/GPU Compilation & Diagnostic Kernel Suite.** Native Google Cloud TPU v4 implementation, exact autodiff 2D Taylor jets, and high-performance reference implementations for all competitors. |
 | **04** | [`phase4.md`](file:///home/tasma/atlas/phases/phase4.md) | **Frontier Architectures (125M FineWeb-Edu Transformer & ViT ImageNet-100) & Live Recording Pipeline.** Fused FlashAttention causal decoders, ViT-Small/16, streaming HuggingFace dataset pipelines, and zero-overhead `AtlasRecorder`. |
 | **05** | [`phase5.md`](file:///home/tasma/atlas/phases/phase5.md) | **Loss Landscape Geometry Diagnostics, Edge-of-Stability Margin & Automated Hyperparameter Advisor.** Extraction of $\mu_{\text{EoS}}$, basin conditioning $\kappa$, flatness radius $R_{\text{flat}}$, and automated learning rate / weight decay sweep synthesis. |
-| **06** | [`phase6.md`](file:///home/tasma/atlas/phases/phase6.md) | **Automated Hyperparameter Sweep Competition: Curvature-Guided Diagnostics vs. Black-Box HPO.** Head-to-head empirical competition against Random Search, Optuna TPE, and ASHA; sample efficiency speedup $\ge 2.5\times$ and 100% divergence prevention. |
+| **06** | [phase6.md](file:///home/tasma/atlas/phases/phase6.md) | **Hyperparameter Sweep Comparison.** Equal-horizon smoke comparison against Random Search, Optuna TPE, and synchronous Successive Halving; larger empirical targets remain unverified. |
 | **07** | [`phase7.md`](file:///home/tasma/atlas/phases/phase7.md) | **Large-Scale Competitive Benchmark Suite & Pareto Domination across Wall-Clock Budgets.** Comprehensive empirical evaluation against all peers across $0.5\text{s} - 30.0\text{s}$ wall budgets; automated diagnosis, restart, and phase remake protocols. |
 | **08** | [`phase8.md`](file:///home/tasma/atlas/phases/phase8.md) | **Empirical Robustness, Partition of Unity Ablation, Noise Resistance & OOD Generalization Audit.** Sensitivity to anchor budgets, Wendland vs alternative kernels, gradient noise stress testing, and out-of-distribution generalization correlations. |
 | **09** | [`phase9.md`](file:///home/tasma/atlas/phases/phase9.md) | **Codebase Cleansing, PEP 8 Formatting, Humanized Documentation, LaTeX Paper Compilation & Publication Release.** Repository-wide cleanup, PEP-8 formatting, rich docstrings, humanized README/paper, compiled camera-ready PDF, and GitHub release push. |
