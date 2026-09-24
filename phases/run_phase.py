@@ -63,6 +63,11 @@ def verify_phase(phase_id: int, state: Dict[str, Any], verbose: bool = True) -> 
     if verbose:
         print(f"\n[PHASE {phase_id}] Verifying: {phase['name']}")
 
+    known_gap = phase.get("known_gap")
+    if known_gap:
+        print(f"  [FAIL] Unresolved evidence gap: {known_gap}")
+        return False
+
     # 1. Check phase markdown file exists
     doc_path = REPO_ROOT / phase.get("file", "")
     if not doc_path.exists():

@@ -2,9 +2,9 @@
 
 ## 1. Executive Summary
 
-Phase 7 executes the large-scale, publication-grade competitive benchmark suite across all model architectures and all diagnostic competitors. It rigorously assesses ATLAS against full-dataset ground truth ($625$ dense grid points evaluated on Google Cloud TPU v4) across a spectrum of wall-clock compute budgets ($C \in [0.5\text{s}, 30.0\text{s}]$).
+Phase 7 targets a large-scale competitive benchmark across architectures and wall-clock budgets. The tracked small-model comparisons use a 625-coordinate reference evaluated on a fixed subset batch, not full-dataset ground truth. A full equal-budget replication across all architectures is still required.
 
-The agent enforces the **Strict Peer Domination Invariant**: Under every wall-clock budget and architecture, ATLAS must match or **strictly outperform** all peers in $L_2$ reconstruction accuracy, topological rank fidelity, curvature recovery, and computational efficiency.
+The **Strict Peer Domination Invariant** is a target, not an established result. The tracked ViT ImageNet benchmark contradicts it at a 2-second budget: ATLAS has relative $L_2$ error 0.000508 and Spearman 0.715, versus grid error 0.000499 and Spearman 0.727. The archived 2-second Lanczos and Hutchinson timings exceed that budget. See `phases/evidence_audit.md`.
 
 ---
 
@@ -28,7 +28,7 @@ The agent enforces the **Strict Peer Domination Invariant**: Under every wall-cl
 
 ## 3. Quantitative Ground Truth Benchmark Results
 
-The benchmark is evaluated against full-dataset ground truth across 625 dense coordinates:
+The archived small-model benchmark uses a 625-coordinate fixed-batch reference:
 
 ### 3.1 Vision Transformer (ViT / CIFAR-10)
 | Method | Wall Budget | Relative $L_2$ Error $\downarrow$ | Spearman $\rho_s \uparrow$ | Curvature Error $\downarrow$ | Latency |

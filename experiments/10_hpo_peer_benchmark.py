@@ -5,8 +5,9 @@ Compares ATLAS SweepAdvisor against standard Hyperparameter Optimization (HPO) m
 2. Optuna TPE (Tree-structured Parzen Estimator Bayesian surrogate)
 3. ASHA (Successive Halving multi-fidelity early stopping)
 
-Evaluates sample efficiency, divergence prevention, and final convergence under
-an identical step budget on Vision Transformer (ViT) on ImageNet-100 / CIFAR.
+Executes each method under an aggregate training-step budget on a synthetic
+Vision Transformer task. Trial horizons differ, so the final-loss table is a
+smoke comparison and cannot establish relative sample efficiency.
 
 Usage:
     python experiments/10_hpo_peer_benchmark.py --smoke_test
@@ -297,16 +298,24 @@ def main():
     print("=" * 80)
 
     report_file = out_dir / "hpo_benchmark_report.json"
+    report = {
+        "methods": results,
+        "budget_steps": budget,
+        "seed": args.seed,
+        "backend": jax.default_backend(),
+        "smoke_test": args.smoke_test,
+        "comparison_valid": False,
+        "comparison_limitations": [
+            "Final losses are measured after different per-trial training horizons.",
+            "One seed and no divergent peer trial cannot establish a speedup or prevention rate.",
+            "The OptunaTPEBaseline is a local TPE-style surrogate, not the Optuna package.",
+        ],
+    }
     with open(report_file, "w") as f:
-        json.dump({"methods": results, "budget_steps": budget}, f, indent=2)
+        json.dump(report, f, indent=2)
     print(f"\nArtifact saved to: {report_file}")
 
-    # Dominance Invariant Check
-    atlas_l = results["ATLAS (Ours)"]["best_loss"]
-    rs_l = results["Random Search"]["best_loss"]
-    assert atlas_l <= rs_l or abs(atlas_l - rs_l) < 0.25, f"ATLAS loss {atlas_l} should outperform Random Search {rs_l}"
-    assert results["ATLAS (Ours)"]["diverged_trials"] == 0, "ATLAS must never produce diverged exploratory trials"
-    print("\n[SUCCESS] Strict Peer Domination & Divergence Prevention Invariants Verified!")
+    print("\n[SMOKE] All methods executed; peer dominance remains unverified.")
 
 
 if __name__ == "__main__":

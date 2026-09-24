@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Phase 5 translates geometric loss landscape properties into actionable, automated optimization guidance. Rather than conducting blind, compute-intensive grid searches or relying on trial-and-error, ATLAS extracts exact local curvature metrics in **<1 second** per trial to predict optimizer stability, detect pathological ravines, quantify generalization potential, and recommend optimal learning rates and weight decays.
+Phase 5 translates geometric loss landscape properties into optimization guidance. The current sweep report records diagnostic suggestions, but it does not contain labeled stability outcomes or a measured prediction-accuracy study. The targets below remain to be verified.
 
 ---
 
@@ -75,10 +75,10 @@ make sweep_vit
 
 | Metric | Target Criterion | Status |
 | :--- | :---: | :---: |
-| **Diagnostic Evaluation Latency** | $< 1.0$ s per trial | **$0.04$ s (TPU v4)** |
-| **EoS Prediction Accuracy** | Correctly identify stable vs unstable trials ($>95\%$) | **$100\%$** |
-| **Curvature Recovery Fidelity** | Projected Hessian $\lambda_{\max}$ relative error $< 1\%$ | **$0.18\%$** |
-| **Recommendation Monotonicity** | Suggested learning rates strictly increase when $\mu_{\text{EoS}} \gg 2.5$ | **VERIFIED** |
+| **Diagnostic Evaluation Latency** | $< 1.0$ s per trial | TPU v4 measurement not reproduced |
+| **EoS Prediction Accuracy** | Correctly identify stable vs unstable trials ($>95\%$) | Labeled outcomes absent |
+| **Curvature Recovery Fidelity** | Projected Hessian $\lambda_{\max}$ relative error $< 1\%$ | Independent reference absent |
+| **Recommendation Monotonicity** | Suggested learning rates increase in selected regimes | Needs targeted test |
 
 ---
 

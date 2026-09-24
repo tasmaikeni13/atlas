@@ -27,8 +27,11 @@ dependencies = [
   "pillow>=9.0",
 ]
 
+[project.optional-dependencies]
+fineweb = ["datasets", "tiktoken"]
+
 [project.urls]
 Homepage = "https://github.com/tasmaikeni13/atlas"
 
-[tool.setuptools]
-packages = ["atlas", "atlas.viz"]
+[tool.setuptools.packages.find]
+include = ["atlas*", "rag*"]

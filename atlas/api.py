@@ -50,8 +50,8 @@ class RenderReport:
         return (
             f"[ATLAS Report] Budget: {self.budget_seconds:.1f}s (Spent: {self.elapsed_seconds:.2f}s)\n"
             f"Anchors: {a['n_est']} estimation + {a['n_cert']} certification (Batch size: {a['batch_size']})\n"
-            f"Accuracy: 95% of loss domain certified within +/-{c['q95_upper_bound']:.4f} "
-            f"({c['relative_q95_error_pct']:.1f}% of dynamic relief)\n"
+            f"Holdout error: q95={c['q95_error']:.4f}; "
+            f"95% domain certificate: {'valid' if c['certified_valid'] else 'unavailable'}\n"
             f"Condition Number: {self.analysis['origin_condition_number']:.2f} | "
             f"Flatness Index: {self.analysis['flatness_index']:.4f}\n"
             f"Outputs: {self.figure_2d}, {self.figure_3d}, {self.animation}"
@@ -149,9 +149,11 @@ class AtlasRecorder:
         allocation = allocator.solve(budget_seconds=budget_seconds, radius=radius)
 
         # 5. Generate Quasi-Random Anchors
-        all_anchors = generate_halton_anchors(allocation.n_total, radius_x=rx, radius_y=ry)
-        est_coords = all_anchors[:allocation.n_est]
-        cert_coords = all_anchors[allocation.n_est:]
+        est_coords = generate_halton_anchors(allocation.n_est, radius_x=rx, radius_y=ry)
+        cert_rng = np.random.default_rng(42)
+        cert_coords = cert_rng.uniform(
+            low=(-rx, -ry), high=(rx, ry), size=(allocation.n_cert, 2)
+        )
 
         # 6. Evaluate Jets on TPU
         eval_batch = self.eval_batches[0]
@@ -171,7 +173,8 @@ class AtlasRecorder:
             reconstruction=recon,
             cert_jets=cert_jets,
             surface_relief=analysis.surface_relief,
-            confidence_level=0.95
+            confidence_level=0.95,
+            iid_uniform_coords=True,
         )
 
         # 10. Publication Renderings

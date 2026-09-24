@@ -72,8 +72,8 @@ def make_jet_probe(apply_fn, loss_fn, basis):
 ```
 
 **Key Execution Features:**
-1. **Compilation Graph:** XLA compiles the `jax.hessian` call into two vector-Jacobian products (VJPs) using reverse-over-forward autodiff.
-2. **Zero Discretization Noise:** The Hessian is computed analytically at machine precision.
+1. **Compilation Graph:** The production `JetProbe` calls `jax.jvp` twice on a reverse-mode parameter gradient, once per subspace direction. The code block above is an equivalent coordinate-space sketch, not the implementation.
+2. **No Finite-Difference Discretization:** The projected Hessian is differentiated by autodiff on a selected batch; floating-point and batch-sampling error remain.
 3. **Execution Latency:** Sub-second per jet evaluation ($<0.05$s on ViT, $<0.15$s on 125M Transformer once JIT-compiled).
 
 ---

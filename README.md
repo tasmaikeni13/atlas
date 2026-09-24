@@ -2,7 +2,7 @@
 
 # ATLAS: Adaptive Taylor Landscape Analysis System
 
-**Budget-Optimal, Certified Loss Landscape Diagnostics for Transformers on Google Cloud TPUs**
+**Budget-Aware Loss Landscape Diagnostics for Transformers on Google Cloud TPUs**
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg)](paper/atlas.pdf)
 [![Lean 4 Verified](https://img.shields.io/badge/Lean_4-Formalized_Proofs-blue.svg)](proofs/AtlasCert/AtlasCert/Certificates.lean)
@@ -32,24 +32,24 @@
 
 ## 🚀 Overview
 
-**ATLAS** (**Adaptive Taylor Landscape Analysis System**) is a certified, budget-optimal loss landscape diagnostic framework engineered natively for pure-attention Transformer architectures (Vision Transformers and Causal Language Models) on hardware accelerators.
+**ATLAS** (**Adaptive Taylor Landscape Analysis System**) is a loss landscape diagnostic framework for pure-attention Transformer architectures (Vision Transformers and Causal Language Models) on hardware accelerators.
 
 Standard loss landscape visualization methods—such as filter-normalized random 2D planes ([Li et al., 2018](https://arxiv.org/abs/1712.09913)) or uniform finite-difference grids—suffer from two catastrophic pathologies in modern neural network analysis:
 1. **Subspace Misalignment:** Random 2D slices are orthogonal to the actual low-dimensional optimization manifold, producing negative or near-zero topological rank correlations ($\rho_s \in [-0.74, 0.27]$).
-2. **Curvature Noise Inflation:** Approximating directional curvature with central finite differences over stochastic mini-batches detonates error as $\mathcal{O}(h^{-2})$, artificially inflating estimated Hessian condition numbers and sharpness metrics by **$11\times$ to $15\times$**.
+2. **Curvature Noise Sensitivity:** With independent mini-batch noise at each stencil point, central finite-difference curvature has standard error proportional to $h^{-2}$. The archived fixed-batch audit does not demonstrate the previously claimed 11–15-fold inflation.
 
-**ATLAS resolves both pathologies from the ground up:**
-- **Exact TPU Autodiff Jets:** Leveraging forward-over-reverse automatic differentiation on Google Cloud TPU v4 TensorCores, ATLAS extracts exact 2D Taylor jets (scalar loss, 2D gradient, and exact $2 \times 2$ projected Hessian $\Pi^\top \nabla^2 \mathcal{L} \Pi$) in two vector-Jacobian product (VJP) passes with **zero finite-difference discretization noise**.
-- **Minimax Budget-Optimal Allocation:** Under a total wall-clock compute budget $C$ and TPU execution cost $t(B) = \tau + \kappa B$, ATLAS continuously balances approximation error $\mathcal{O}(N^{-3/2})$ against Monte-Carlo sampling variance $\mathcal{O}(\sigma / \sqrt{B})$, achieving the theoretically provable minimax error rate of **$\mathcal{O}(C^{-3/8})$**.
-- **Hermite-Taylor Partition of Unity:** Local second-order Taylor polynomials are blended into a global $C^1$ smooth manifold using Wendland compactly supported radial basis functions.
-- **Distribution-Free DKW Error Certificates:** Holdout certification anchors evaluated on independent mini-batches provide finite-sample, distribution-free statistical confidence envelopes via the Dvoretzky-Kiefer-Wolfowitz (DKW) inequality.
+**ATLAS addresses these diagnostic problems:**
+- **Exact Autodiff Jets:** `JetProbe` computes loss, projected gradient, and the projected $2 \times 2$ Hessian $\Pi^\top \nabla^2 \mathcal{L} \Pi$ with two JVPs of a reverse-mode gradient. This avoids finite-difference discretization error on the selected batch; batch sampling error remains.
+- **Feasible Budget Allocation:** Under wall-clock budget $C$ and cost model $t(B) = \tau + \kappa B$, ATLAS searches integer anchor and batch plans that fit the budget. A continuous zero-overhead error surrogate has a conditional $C^{-3/8}$ optimum; a reconstruction-risk minimax rate has not been established.
+- **Hermite-Taylor Partition of Unity:** Local second-order Taylor polynomials are blended with smooth inverse-distance Shepard weights. A compact Wendland variant remains to be implemented and compared.
+- **Holdout Error Audit:** Observed fixed-batch errors are reported. A DKW certificate is issued only when holdout coordinates are iid uniform and there are enough points for the requested coverage. The existing 14-point figures do not meet that condition.
 - **Formally Verified in Lean 4:** All core mathematical theorems—budget optimality, partition of unity error transfer, interpolation noise floor, and debiased estimation—are machine-checked in Lean 4 with Mathlib.
 
 ---
 
 ## ⚡ Quickstart: 2-Line Training Integration
 
-Attach `AtlasRecorder` to any existing JAX/Flax training loop. It records trajectory snapshots during training and performs budget-optimal probing, reconstruction, and certification upon completion:
+Attach `AtlasRecorder` to any existing JAX/Flax training loop. It records trajectory snapshots during training and performs budgeted probing, reconstruction, and a holdout error audit upon completion:
 
 ```python
 import jax
@@ -71,7 +71,7 @@ for step, batch in enumerate(train_loader):
     # 2. Record parameter update (Line 2)
     recorder.step(params, grad=grads, loss=float(loss))
 
-# 3. Generate certified 2D/3D diagnostic suite in sub-second latency
+# 3. Generate 2D/3D diagnostics and a holdout error audit
 report = recorder.render(
     output_dir="atlas_diagnostics",
     budget_seconds=5.0,
@@ -90,8 +90,8 @@ python examples/quickstart.py
 
 ## 📊 Industrial Diagnostic Gallery
 
-### 1. Reconstructed 2D Certified Loss Manifolds
-Filled contours display the global $C^1$ smooth surface. Optimization checkpoints (white curve) illustrate convergence through curved valleys into wide minima. Purple stars show budget-optimal anchor sites; red squares denote holdout DKW validation anchors.
+### 1. Reconstructed 2D Loss Manifolds
+Filled contours display the reconstructed surface. Optimization checkpoints (white curve) illustrate the trajectory. Purple stars show anchor sites; red squares denote holdout evaluation points.
 
 <table>
   <tr>
@@ -118,8 +118,8 @@ Surface elevation mappings display the geometric topography traversed by multi-h
   </tr>
 </table>
 
-### 3. Curvature Noise Explosion Audit (Finite Differences vs. ATLAS Exact Jets)
-Stochastic mini-batch finite differencing exhibits an explosive $\mathcal{O}(h^{-2})$ noise amplification, artificially inflating estimated condition numbers by up to **$15\times$** and corrupting sharpness diagnostics. ATLAS computes exact projected Hessians via TPU autodiff, achieving $<0.5\%$ error across all scales.
+### 3. Archived Curvature Audit
+The mathematical $h^{-2}$ standard-error scaling assumes independent noise at the three stencil points. These archived figures use the same batch at $h=0.05$ and show finite-difference estimates below the larger-batch Hessian reference (ratios 0.13–0.45). They do not establish the claimed 15-fold inflation or a $<0.5\%$ full-dataset accuracy result.
 
 <table>
   <tr>
@@ -132,8 +132,8 @@ Stochastic mini-batch finite differencing exhibits an explosive $\mathcal{O}(h^{
   </tr>
 </table>
 
-### 4. Distribution-Free Statistical Error Certification (DKW Bounds)
-Empirical cumulative distribution function (ECDF) of holdout reconstruction residuals with simultaneous Dvoretzky-Kiefer-Wolfowitz 95% confidence bands (light blue) and certified quantile bounds (dashed red line):
+### 4. Empirical Holdout Errors
+These archived plots used deterministic Halton points and 14 holdouts. Their DKW shading and 95th-percentile labels are historical and do not establish a 95% domain certificate. Current code marks such reports as uncertified.
 
 <table>
   <tr>
@@ -150,7 +150,7 @@ Empirical cumulative distribution function (ECDF) of holdout reconstruction resi
 
 ## 📈 Rigorous Quantitative Benchmarks
 
-Exhaustive benchmarking against full-dataset ground truth ($625$ dense grid points) across varying wall-clock compute budgets on Google Cloud TPU v4:
+Archived comparisons against a 625-coordinate fixed evaluation-batch reference across nominal budget settings:
 
 ### Vision Transformer (ViT / CIFAR-10, 546,186 Parameters)
 | Method | Wall Budget | Relative $L_2$ Error $\downarrow$ | Spearman $\rho_s \uparrow$ | Curvature Error $\downarrow$ | Latency |
@@ -175,7 +175,9 @@ Exhaustive benchmarking against full-dataset ground truth ($625$ dense grid poin
 | Random Slice ([Li et al., 2018](https://arxiv.org/abs/1712.09913)) | 10.0s | 0.8631 | 0.1640 | 0.9821 | 2.50s |
 
 ### Key Empirical Findings:
-1. **$7\times$ Higher Accuracy than Uniform Grids:** On the Causal Transformer, ATLAS achieves an $L_2$ error of $0.0474$ compared to $0.3295$ for Uniform Grids.
+These are archived small-model results. They do not establish universal peer domination: the tracked ViT ImageNet benchmark favors the grid at its 2-second setting (L2 0.000499 versus 0.000508; Spearman 0.727 versus 0.715).
+
+1. **About $6.9\times$ Lower Error than Uniform Grids in the archived Causal run:** ATLAS has relative $L_2$ error $0.0474$ versus $0.3295$ for the grid.
 2. **Topological Ranking Fidelity ($\rho_s = 0.9998$):** ATLAS faithfully preserves true loss rankings, whereas unaligned Random Slices produce inverted rankings ($\rho_s = -0.7436$).
 3. **99.5% Curvature Accuracy:** ATLAS recovers the projected Hessian with only $0.0048$ error in $0.52$ seconds, completely bypassing stochastic finite-difference noise.
 
@@ -183,24 +185,28 @@ Exhaustive benchmarking against full-dataset ground truth ($625$ dense grid poin
 
 ## 📐 Mathematical Foundations
 
-### 1. Continuous Minimax Budget Allocation
+### 1. Continuous Budget Allocation Surrogate
 Let $C$ be the wall-clock compute budget, $N$ the number of anchors, and $B$ the mini-batch size. Under hardware cost model $t(B) = \tau + \kappa B$, the total error bound balances spatial discretization against stochastic variance:
 $$E(N, B) \le \frac{c_1 M_3 R^3}{N^{3/2}} + \frac{c_2 \sigma}{\sqrt{B}}.$$
 
-Applying the weighted AM-GM inequality reveals the universal minimax lower bound:
-$$\boxed{E \ge 4 \left( \frac{c_1 M_3 R^3 (c_2 \sigma)^3}{27} \right)^{1/4} \left(\frac{\kappa}{C}\right)^{3/8} = \mathcal{O}(C^{-3/8})}.$$
+When dispatch overhead is neglected, substituting $B=C/(\kappa N)$ and applying weighted AM-GM gives the minimum of this continuous error surrogate:
+$$\boxed{E_{\mathrm{bound}} \ge 4 \left( \frac{c_1 M_3 R^3 (c_2 \sigma)^3}{27} \right)^{1/4} \left(\frac{\kappa}{C}\right)^{3/8} = \Theta(C^{-3/8})}.$$
 
-The optimal allocation $(N^*, B^*)$ is uniquely attained at:
-$$N^* = \left(\frac{3 c_1 M_3 R^3}{c_2 \sigma} \sqrt{\frac{C}{\kappa}}\right)^{1/2}, \quad B^* = \frac{C - N^* \tau}{N^* \kappa}.$$
+The continuous surrogate optimum $(N^*, B^*)$ is attained at:
+$$N^* = \left(\frac{3 c_1 M_3 R^3}{c_2 \sigma} \sqrt{\frac{C}{\kappa}}\right)^{1/2}, \quad B^* = \frac{C}{N^* \kappa}.$$
+
+The closed-form $N^*$ assumes $\tau=0$; for positive dispatch overhead and integer limits, `BudgetAllocator` searches feasible plans. The Lean AM-GM proof bounds this surrogate, not the minimax reconstruction risk. The $C^{-3/8}$ rate is conditional on the surrogate model and an interior, uncapped allocation.
 
 ### 2. Hermite-Taylor Partition of Unity
-Given local second-order Taylor models $Q_i(x, y) = g_i + \nabla g_i^\top \Delta_i + \frac{1}{2}\Delta_i^\top H_i \Delta_i$, ATLAS synthesizes a global $C^1$ manifold using compact Wendland basis functions:
-$$\hat{\mathcal{L}}(x, y) = \sum_{i=1}^N w_i(x, y) Q_i(x, y), \quad w_i(x, y) = \frac{\phi(\|x - x_i\| / r_i)}{\sum_j \phi(\|x - x_j\| / r_j)}.$$
+Given local second-order Taylor models $Q_i(x, y) = g_i + \nabla g_i^\top \Delta_i + \frac{1}{2}\Delta_i^\top H_i \Delta_i$, ATLAS synthesizes a smooth manifold using inverse-distance Shepard weights. With $d_i(q)=\|q-q_i\|/r_i$ and $\phi_i(q)=(d_i(q)^2+\epsilon^2)^{-p/2}$:
+$$\hat{\mathcal{L}}(q) = \sum_{i=1}^N w_i(q) Q_i(q), \quad w_i(q) = \frac{\phi_i(q)}{\sum_j \phi_j(q)}.$$
 Because $\sum w_i = 1$ and $w_i \ge 0$, any local error $|g - Q_i| \le \epsilon$ transfers globally with zero amplification: $|\hat{\mathcal{L}} - g| \le \epsilon$.
 
 ### 3. Finite-Sample DKW Certification
 For holdout anchors with variance $v_k$, the debiased residual $s_k^2 = (\hat{\mathcal{L}}_k - \tilde{g}_k)^2 - v_k$ satisfies $\mathbb{E}[s_k^2] = e_k^2$. By the Dvoretzky-Kiefer-Wolfowitz inequality with Massart's tight constant:
 $$\mathbb{P}\left(\sup_{t} |F_n(t) - F(t)| \le \sqrt{\frac{\ln(2/\delta)}{2 N_{\text{cert}}}}\right) \ge 1 - \delta.$$
+
+The unbiasedness statement concerns the *unclipped squared residual* and does not certify the CDF of true errors. The DKW bound applies to observed errors on a fixed evaluation batch only when coordinates are iid uniform and independent of the reconstruction. For 95% domain coverage at 95% confidence, this two-sided bound needs at least 738 holdouts. With 14 points, ATLAS reports descriptive errors and sets `certified_valid` to `false`.
 
 ---
 
@@ -209,11 +215,11 @@ $$\mathbb{P}\left(\sup_{t} |F_n(t) - F(t)| \le \sqrt{\frac{\ln(2/\delta)}{2 N_{\
 All foundational theorems of ATLAS are machine-checked in Lean 4 without axioms or `sorries`. The proof suite is located in [`proofs/AtlasCert/AtlasCert/Certificates.lean`](proofs/AtlasCert/AtlasCert/Certificates.lean):
 
 ```lean
--- Budget-allocation minimax lower bound
+-- Lower bound for the continuous error surrogate
 theorem alloc_lower_bound {a b u : ℝ} (ha : 0 < a) (hb : 0 < b) (hu : 0 < u) :
     4 * (a * b ^ 3 / 27) ^ ((1 : ℝ) / 4) ≤ a / u ^ 3 + b * u
 
--- Exact attainment of the minimax rate
+-- Exact attainment of the surrogate minimum
 theorem alloc_attained {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     ∃ u : ℝ, 0 < u ∧ a / u ^ 3 + b * u = 4 * (a * b ^ 3 / 27) ^ ((1 : ℝ) / 4)
 
@@ -245,7 +251,7 @@ To evaluate ATLAS and baseline landscape diagnostics on large-scale frontier arc
 
 - **Architecture:** 12 layers, 12 attention heads, $d_{\text{model}} = 768$, $d_{\text{ff}} = 3072$, Rotary Positional Embeddings (RoPE), RMSNorm, tied embeddings, vocab size 50,257 (123,597,312 parameters).
 - **TPU FlashAttention Kernel:** Fused online-softmax block-tiled causal attention lowering directly into TPU v4 systolic matrix multiply units (MXUs) via `jax.nn.dot_product_attention`.
-- **FineWeb-Edu Dataset Streaming:** Streaming token pipeline reading HuggingFace `HuggingFaceFW/fineweb-edu` with `tiktoken` BPE tokenization, memory-mapped caching, and synthetic generator fallbacks.
+- **FineWeb-Edu Dataset Streaming:** Streaming token pipeline reading HuggingFace `HuggingFaceFW/fineweb-edu` with `tiktoken` BPE tokenization, memory-mapped caching, and synthetic generator fallbacks. Install the optional real-data dependencies with `pip install '.[fineweb]'`.
 
 ### Apples-to-Apples Baseline Implementations
 To ensure scientifically rigorous, publication-grade fairness, all compared landscape methods are implemented with dedicated JAX/XLA TPU kernels:

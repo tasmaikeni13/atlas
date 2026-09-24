@@ -2,32 +2,24 @@
 
 ## 1. Executive Summary
 
-Phase 8 evaluates the scientific robustness, stability envelopes, and out-of-distribution (OOD) predictive power of **ATLAS**. It validates the sensitivity of the Hermite-Taylor Partition of Unity across radial basis kernels, stress-tests reconstruction accuracy under extreme mini-batch gradient noise ($\sigma / \mu \gg 1$), verifies the coverage of distribution-free Dvoretzky-Kiefer-Wolfowitz (DKW) certificates, and proves that ATLAS geometric flatness ($R_{\text{flat}}$) strongly predicts out-of-distribution generalization.
+Phase 8 targets the scientific robustness, stability envelopes, and out-of-distribution (OOD) predictive power of **ATLAS**. The tracked repository lacks the raw OOD pairs and RBF ablation telemetry needed to verify the numerical claims below. The archived 14-point deterministic holdout plots do not provide 95% DKW coverage; see `phases/evidence_audit.md`.
 
 ---
 
 ## 2. Partition of Unity Kernel Ablation Study
 
-ATLAS uses the compactly supported $C^2$ Wendland radial basis function:
-$$\phi_{\text{Wendland}}(r) = (1 - r)_+^4 (4r + 1), \quad r = \frac{\|(x, y) - (x_i, y_i)\|}{r_i}.$$
+ATLAS currently uses smooth inverse-distance Shepard weights:
+$$\phi_i(q) = \left(\frac{\|q-q_i\|^2}{r_i^2}+\epsilon^2\right)^{-p/2}.$$
+Wendland $C^2$ compact support, $\phi(r)=(1-r)_+^4(4r+1)$, is a proposed comparison.
 
 ### Comparative Kernel Ablation Matrix
-We benchmark Wendland RBF against classical global radial basis functions:
+The planned ablation should compare the current Shepard blend with:
 1. **Gaussian RBF:** $\phi_{\text{Gauss}}(r) = \exp(-\epsilon^2 r^2)$
 2. **Inverse Multiquadric (IMQ):** $\phi_{\text{IMQ}}(r) = (1 + (\epsilon r)^2)^{-1/2}$
 3. **Cubic Spline:** $\phi_{\text{Cubic}}(r) = r^3$
 4. **Bilinear Spline:** Uniform piecewise linear blending.
 
-| Kernel Function | Compact Support? | Sparsity | Relative $L_2$ Error | Runge Oscillation Risk | Matrix Solve Required? |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Wendland $C^2$ (ATLAS)** | **Yes** | **Sparse ($k$-NN)** | **$\mathbf{0.0474}$** | **None** | **No ($\mathcal{O}(N)$ explicit)** |
-| Gaussian RBF | No | Dense ($N \times N$) | $0.0982$ | Severe on boundary | Yes ($\mathcal{O}(N^3)$ ill-conditioned) |
-| Inverse Multiquadric | No | Dense ($N \times N$) | $0.0865$ | Moderate | Yes ($\mathcal{O}(N^3)$) |
-| Cubic Spline | No | Dense | $0.1420$ | Severe overshoot | Yes |
-| Bilinear Spline | Local | Sparse | $0.3295$ | Discontinuous gradients | No |
-
-**Theoretical & Empirical Justification:**
-The Wendland kernel guarantees partition of unity $(\sum w_i = 1)$ without solving dense linear systems, preventing Runge phenomenon oscillations near domain boundaries and scaling with $\mathcal{O}(N)$ computational complexity.
+The earlier numerical ablation table had no tracked per-kernel telemetry and attributed the archive's $0.0474$ reconstruction error to a Wendland kernel that the implementation did not use. It is withdrawn pending a controlled, equal-budget comparison. For the current Shepard blend, normalized positive weights form a partition of unity without a dense matrix solve. Its evaluation is dense $\mathcal{O}(MN)$ for $M$ queries and $N$ anchors.
 
 ---
 

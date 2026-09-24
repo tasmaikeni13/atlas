@@ -10,10 +10,10 @@
 **ATLAS** (**Adaptive Taylor Landscape Analysis System**) is a budget-optimal, certified loss landscape diagnostic framework engineered for pure-attention Transformers (Vision Transformers and Causal Language Models) on hardware accelerators (Google Cloud TPU v4 Pod slices & GPUs).
 
 ### Core Scientific & Engineering Pillars
-- **Exact Autodiff 2D Taylor Jets**: Reconstructs local $C^1$ loss manifolds using exact scalar loss, 2D gradient, and exact $2 \times 2$ projected Hessian $\Pi^\top \nabla^2 \mathcal{L} \Pi$ via 2 forward-over-reverse VJP passes (zero finite-difference noise).
-- **Minimax Optimal Budgeting**: Proved $\mathcal{O}(C^{-3/8})$ minimax error rate balancing spatial anchor discretization $\mathcal{O}(N^{-3/2})$ against Monte-Carlo sampling variance $\mathcal{O}(\sigma/\sqrt{B})$ under hardware cost model $t(B) = \tau + \kappa B$.
-- **Hermite-Taylor Partition of Unity**: Global $C^1$ blending using compactly supported Wendland radial basis functions.
-- **Distribution-Free DKW Error Certificates**: Finite-sample holdout confidence envelopes via the Dvoretzky-Kiefer-Wolfowitz inequality.
+- **Exact Autodiff 2D Taylor Jets**: Evaluates scalar loss, projected gradient, and projected $2 \times 2$ Hessian $\Pi^\top \nabla^2 \mathcal{L} \Pi$ using two JVPs of a reverse-mode gradient, with no finite-difference discretization error on the selected batch.
+- **Budget Allocation Surrogate**: The continuous zero-dispatch-overhead error surrogate has a conditional $C^{-3/8}$ optimum. The implementation searches feasible integer allocations under $t(B) = \tau + \kappa B$. A minimax lower bound on reconstruction risk has not been established.
+- **Hermite-Taylor Partition of Unity**: The current implementation blends quadratic jets with smooth inverse-distance Shepard weights. Compact Wendland support remains a proposed, unverified variant.
+- **Conditional DKW Error Certificates**: Fixed-batch domain quantiles require iid uniform holdout coordinates and sufficient sample size. The archived 14-point deterministic reports are empirical audits, not 95% certificates.
 - **Formal Verification in Lean 4**: Machine-checked proofs in Mathlib without unproved axioms or `sorry` placeholders.
 
 ---

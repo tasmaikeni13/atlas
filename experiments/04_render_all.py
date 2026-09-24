@@ -99,9 +99,10 @@ def render_model_pipeline(model_type: str = "vit", traj_file: str = "runs/vit/vi
     print(f"Optimal Allocation: {allocation.n_est} estimation anchors + {allocation.n_cert} cert anchors (Batch {allocation.batch_size})")
 
     # 5. Generate Anchors & Evaluate Jets on TPU
-    anchors = generate_halton_anchors(allocation.n_total, radius_x=rx, radius_y=ry)
-    est_anchors = anchors[:allocation.n_est]
-    cert_anchors = anchors[allocation.n_est:]
+    est_anchors = generate_halton_anchors(allocation.n_est, radius_x=rx, radius_y=ry)
+    cert_anchors = np.random.default_rng(42).uniform(
+        low=(-rx, -ry), high=(rx, ry), size=(allocation.n_cert, 2)
+    )
 
     print(f"Evaluating {len(est_anchors)} analytical Taylor jets on TPU...")
     t0_jets = time.perf_counter()
@@ -125,7 +126,8 @@ def render_model_pipeline(model_type: str = "vit", traj_file: str = "runs/vit/vi
         reconstruction=recon,
         cert_jets=cert_jets,
         surface_relief=analysis.surface_relief,
-        confidence_level=0.95
+        confidence_level=0.95,
+        iid_uniform_coords=True,
     )
     print(f"[Certificate] {certificate.summary()}")
 
@@ -144,7 +146,7 @@ def render_model_pipeline(model_type: str = "vit", traj_file: str = "runs/vit/vi
         cert_points=cert_anchors,
         analysis=analysis,
         certificate=certificate,
-        title=f"ATLAS Certified Loss Landscape: {model_title}",
+        title=f"ATLAS Loss Landscape: {model_title}",
         save_path=fig2d_out
     )
 

@@ -2,7 +2,9 @@
 
 ## 1. Executive Summary
 
-Phase 2 establishes the empirical statistical theory, Monte Carlo simulation framework, and distribution-free error certificates for **ATLAS**. It provides the statistical mechanics validating the analytical rate $\mathcal{O}(C^{-3/8})$, audits the $\mathcal{O}(h^{-2})$ stochastic noise explosion in finite-difference curvature estimation, formalizes the Dvoretzky-Kiefer-Wolfowitz (DKW) statistical certification envelope, and proves that ATLAS strictly dominates all peer landscape estimators under stochastic Monte Carlo sampling.
+Phase 2 sets out the statistical checks needed for **ATLAS**: finite-difference noise under independent evaluations, holdout error distributions, and peer comparisons under matched budgets. Its theoretical assumptions and archived empirical claims require the corrections and tests below.
+
+**Evidence correction:** The archived sharpness audit uses the same batch for all three finite-difference stencil evaluations at $h=0.05$. Its recorded estimate/reference ratios are 0.13–0.45, so it does not verify the independent-noise $h^{-2}$ scaling or an 11–15-fold inflation claim. The peer-domination and 95% certificate targets below remain unverified.
 
 ---
 
@@ -43,7 +45,7 @@ To provide mathematically sound quality guarantees in mission-critical applicati
 
 ### 3.1 Unbiased Variance-Corrected Residuals
 Let $\{(x_k', y_k')\}_{k=1}^{N_{\text{cert}}}$ be $N_{\text{cert}}$ independent holdout coordinates sampled via a 2D Halton sequence disjoint from the training anchors.
-At each holdout anchor, we evaluate the loss on two independent mini-batch halves $\mathcal{B}_1, \mathcal{B}_2$ of size $B/2$:
+The original analysis proposed evaluating the loss on two independent mini-batch halves $\mathcal{B}_1, \mathcal{B}_2$ of size $B/2$:
 $$\hat{g}_{k, 1} = g(x_k', y_k'; \mathcal{B}_1), \quad \hat{g}_{k, 2} = g(x_k', y_k'; \mathcal{B}_2).$$
 The pooled mean and sample variance are:
 $$\tilde{g}_k = \frac{\hat{g}_{k, 1} + \hat{g}_{k, 2}}{2}, \quad v_k = \frac{(\hat{g}_{k, 1} - \hat{g}_{k, 2})^2}{4}.$$
@@ -51,21 +53,36 @@ $$\tilde{g}_k = \frac{\hat{g}_{k, 1} + \hat{g}_{k, 2}}{2}, \quad v_k = \frac{(\h
 The variance-corrected squared residual is:
 $$s_k^2 = \max\left(0, \; (\hat{\mathcal{L}}(x_k', y_k') - \tilde{g}_k)^2 - v_k\right).$$
 
-**Theorem 4 (Exact Unbiasedness).**
-$$\mathbb{E}[s_k^2] = e_k^2 = (\hat{\mathcal{L}}(x_k', y_k') - g(x_k', y_k'))^2.$$
-*Formally verified in Lean 4 (`Atlas.debias_unbiased`).*
+**Correction:** The Lean theorem proves unbiasedness for the *unclipped* quantity
+$(\hat{\mathcal{L}}-\tilde g_k)^2-v_k$ under its stated moment assumptions.
+The displayed clipped quantity is generally biased upward. Neither quantity is
+an observed absolute true error, so applying DKW to its empirical CDF does not
+certify a quantile of the population-loss reconstruction error.
 
 ### 3.2 Massart-Tight DKW Confidence Bands
-Let $F(t) = \mathbb{P}(|e_k| \le t)$ be the true cumulative distribution function of absolute reconstruction errors over the 2D domain, and let $\hat{F}_n(t) = \frac{1}{N_{\text{cert}}} \sum_{k=1}^{N_{\text{cert}}} \mathbf{1}_{\{s_k \le t\}}$ be the empirical CDF.
+For a *fixed evaluation batch*, let $F(t)$ be the CDF of absolute
+reconstruction errors at coordinates sampled independently and uniformly over
+the stated 2D domain. The empirical CDF of the observed fixed-batch residuals
+obeys DKW only when the holdout coordinates are iid and independent of the
+fitted reconstruction. A deterministic Halton sequence does not meet this
+assumption. A fixed-batch certificate does not certify population loss.
 
 By the Dvoretzky-Kiefer-Wolfowitz inequality with Massart's optimal constant:
 $$\mathbb{P}\left(\sup_{t \in \mathbb{R}} |\hat{F}_n(t) - F(t)| \le \epsilon_{\text{dkw}}\right) \ge 1 - \delta, \quad \text{where} \quad \epsilon_{\text{dkw}} = \sqrt{\frac{\ln(2/\delta)}{2 N_{\text{cert}}}}.$$
 
 For a target statistical confidence level $1 - \delta = 0.95$ and quantile $p = 0.95$:
-$$q_{0.95} = \hat{F}_n^{-1}\left( \min(1.0, \; 0.95 + \epsilon_{\text{dkw}}) \right).$$
+$$q_{0.95} \le \hat{F}_n^{-1}(0.95 + \epsilon_{\text{dkw}})
+\quad\text{only if}\quad 0.95 + \epsilon_{\text{dkw}} \le 1.$$
+
+The inverse empirical CDF must use the corresponding order statistic, not an
+interpolated percentile. At 95% coverage and 95% confidence the two-sided DKW
+bound needs at least 738 iid holdouts. With 14 holdouts, the maximum observed
+error gives only a 63.7% DKW lower coverage bound, even if the points are iid.
 
 **Certified Guarantee:**
-With probability at least $95\%$, at least $95\%$ of the entire loss manifold domain has absolute reconstruction error bounded by $q_{0.95}$:
+When these assumptions and the sample-size condition hold, with probability at
+least $95\%$, at least $95\%$ of the *fixed-batch* domain has absolute error
+bounded by $q_{0.95}$:
 $$\mathbb{P}\left( \text{Vol}\left(\{(x, y) : |\hat{\mathcal{L}}(x, y) - g(x, y)| \le q_{0.95}\}\right) \ge 0.95 \cdot \text{Area}(\mathcal{S}) \right) \ge 0.95.$$
 
 ---
@@ -79,14 +96,14 @@ The agent must execute synthetic and empirical Monte Carlo simulations across va
 make sharpness
 ```
 
-### Quantitative Domination Thresholds (Monte Carlo Benchmarks)
+### Required Evidence
 
-| Metric | Target / Invariant | Grid + Spline Baseline | Random Slice | Finite Differences |
-| :--- | :---: | :---: | :---: | :---: |
-| **Curvature Relative Error ($h = 10^{-3}$)** | **$\le \mathbf{0.01}$ ($<1\%$)** | $0.45 - 0.80$ | N/A | $11.0 - 15.0$ ($1100\% - 1500\%$) |
-| **Hessian Condition Number Inflation** | **$\le \mathbf{1.05\times}$** | $3.5\times - 6.0\times$ | N/A | $\mathbf{11\times - 15\times}$ |
-| **DKW 95% Error Bound ($q_{0.95}$)** | **$\le \mathbf{0.05} \times \Delta \mathcal{L}$** | Uncertified | Uncertified | Uncertified |
-| **Monte Carlo Empirical Coverage ($1-\delta=0.95$)** | **$\ge \mathbf{95.0\%}$** | Heuristic ($72\% - 84\%$) | $0\%$ | Heuristic ($60\% - 80\%$) |
+| Check | Current evidence | Required smoke-scale follow-up |
+| :--- | :--- | :--- |
+| Independent-noise finite-difference scaling | Archived same-batch audit at one $h$ | Vary $h$ and independent batch seeds; compare variance with $6\sigma^2/(Bh^4)$ on a synthetic model. |
+| Fixed-batch 95%/95% DKW certificate | 14 deterministic points, invalid | iid uniform coordinates and at least 738 holdouts for this two-sided DKW criterion. |
+| Population-loss error certificate | No uniform observation-error bound | Add a valid observation-error guarantee or report only fixed-batch error. |
+| Peer ranking under equal budgets | Archived metrics do not cover this claim | Record device, seeds, total wall time, and matched evaluation targets. |
 
 ---
 
@@ -94,12 +111,12 @@ make sharpness
 
 If Monte Carlo simulations or statistical tests fail:
 1. **If DKW Empirical Coverage $< 95\%$:**
-   - Increase certification allocation ratio $\alpha = N_{\text{cert}} / N_{\text{total}}$ from $0.15$ to $0.25$.
-   - Check if residual variance $v_k$ was computed on overlapping mini-batches.
-   - Re-run Halton sequence generation with higher prime bases to prevent spatial clustering.
+   - Verify iid uniform holdout coordinates independent of fitting.
+   - Check that $0.95+\epsilon_{\mathrm{dkw}}\le 1$; increasing a 14-point holdout fraction to 20 points does not meet this criterion.
+   - For population-loss claims, separately establish an observation-error bound.
 2. **If Curvature Relative Error $> 1.0\%$:**
    - Verify that JAX float32/bfloat16 precision accumulator is set to highest: `jax.config.update("jax_default_matmul_precision", "highest")`.
-   - Ensure VJP forward-over-reverse tape is correctly differentiating the restricted 2D loss.
+   - Ensure the JVPs of the reverse-mode gradient are correctly projected onto both subspace directions.
 3. **If a Peer matches ATLAS in any Monte Carlo metric:**
    - Investigate anchor density distribution. Transition from quasi-random Halton anchors to Lloyd-relaxed Voronoi anchors.
    - Adjust Wendland kernel support radius $r_i$ dynamically based on local $k$-nearest neighbor distance.

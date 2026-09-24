@@ -4,7 +4,7 @@
 
 Phase 6 subjects ATLAS loss landscape diagnostics to a rigorous, head-to-head competition against industry-standard Hyperparameter Optimization (HPO) and sweep methods. While traditional HPO algorithms treat the neural network as an expensive black-box mapping hyperparameters $\lambda \to \mathcal{L}$, **ATLAS** leverages exact second-order curvature ($\lambda_{\max}(H)$, condition number $\kappa$, and Edge-of-Stability margin $\mu_{\text{EoS}}$) extracted in $<0.05$s on TPUs/GPUs.
 
-This phase establishes the empirical superiority of **second-order landscape-guided sweeping** over classical black-box optimization:
+This phase tests the proposed advantage of **second-order landscape-guided sweeping** over classical black-box optimization. The archived one-seed, 16-step smoke report does not measure the stated 2.5x target-loss speedup or divergence-prevention advantage:
 1. **Random Search HPO:** Log-uniform stochastic parameter sampling.
 2. **Optuna TPE (Tree-structured Parzen Estimator):** Bayesian surrogate optimization over historical trial losses.
 3. **ASHA (Asynchronous Successive Halving Algorithm):** Multi-fidelity early-stopping pruner.
@@ -34,14 +34,14 @@ Consequently, ATLAS synthesizes the optimal learning rate **analytically in a si
 
 All competitor methods are standardized in `atlas/baselines/hpo.py`:
 1. `RandomSearchHPO`: Samples $\log_{10}(\eta) \sim \mathcal{U}(-5, -2)$ and $\log_{10}(\lambda_{\text{wd}}) \sim \mathcal{U}(-4, -1)$.
-2. `OptunaTPEBaseline`: Fits non-parametric kernel density estimators $l(x)$ and $g(x)$ over scalar loss distributions to propose candidate hyperparameter configurations maximizing expected improvement.
+2. `OptunaTPEBaseline`: A local TPE-style surrogate. It does not invoke the Optuna package and is not yet a validated reference implementation of Optuna TPE.
 3. `ASHABaseline`: Enforces aggressive successive halving across fidelity rungs, pruning underperforming configurations based on intermediate scalar loss.
 
 ---
 
 ## 4. Head-to-Head Benchmark Protocol (`experiments/10_hpo_peer_benchmark.py`)
 
-All methods are evaluated under an identical total training step budget on pure-attention Vision Transformers on ImageNet-100 / CIFAR:
+The current smoke driver gives each method the same aggregate training-step count on a synthetic Vision Transformer task, but per-trial horizons differ. Its final-loss table is a pipeline check, not a fair HPO ranking:
 
 ```bash
 # Execute peer HPO benchmark on TPU/GPU:

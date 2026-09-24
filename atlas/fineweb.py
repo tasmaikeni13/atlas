@@ -7,7 +7,11 @@ import pathlib
 import time
 from typing import Generator, Iterator, Optional, Tuple
 import numpy as np
-import tiktoken
+
+try:
+    import tiktoken
+except ImportError:
+    tiktoken = None
 
 
 class FineWebEduDataset:
@@ -37,10 +41,7 @@ class FineWebEduDataset:
         self.synthetic_fallback = synthetic_fallback
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
-        try:
-            self.tokenizer = tiktoken.get_encoding("gpt2")
-        except Exception:
-            self.tokenizer = None
+        self.tokenizer = tiktoken.get_encoding("gpt2") if tiktoken is not None else None
 
     def get_stream(
         self,
@@ -84,6 +85,8 @@ class FineWebEduDataset:
         batch_size: int,
         max_tokens: int
     ) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
+        if self.tokenizer is None:
+            raise RuntimeError("tiktoken is required to stream FineWeb-Edu text")
         token_buffer = []
         tokens_yielded = 0
         chunk_size = self.seq_len + 1  # 1 extra for causal target

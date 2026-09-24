@@ -5,13 +5,12 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
-from scipy.optimize import minimize_scalar
 
 from .probe import CostModel
 
 @dataclasses.dataclass
 class OptimalAllocation:
-    """Optimal allocation parameters derived from the theoretical rate minimax solver."""
+    """Feasible integer allocation minimizing the configured error surrogate."""
     n_total: int
     n_est: int
     n_cert: int
@@ -33,7 +32,7 @@ class OptimalAllocation:
 
 
 class BudgetAllocator:
-    """Solves the minimax rate-optimal allocation between anchor count N and sample batch size B."""
+    """Minimize the stated error surrogate over feasible integer allocations."""
 
     def __init__(self, cost_model: CostModel, cert_fraction: float = 0.15):
         self.cm = cost_model
@@ -48,35 +47,51 @@ class BudgetAllocator:
         min_anchors: int = 8,
         max_anchors: int = 80
     ) -> OptimalAllocation:
-        """Finds (N*, B*) minimizing E(N, B) = c1 * M3 * R^3 * N^(-3/2) + c2 * sigma * B^(-1/2)."""
+        """Minimize the error surrogate subject to the affine cost budget.
+
+        The estimation count, rather than the total count including holdouts,
+        controls the spatial term. A constrained finite search is exact for
+        this surrogate because error decreases with batch size at fixed N.
+        """
         tau = self.cm.tau
         kappa = self.cm.kappa
+        if tau < 0 or kappa <= 0:
+            raise ValueError("Cost model requires tau >= 0 and kappa > 0")
+        if not 0.0 <= self.cert_fraction < 1.0:
+            raise ValueError("cert_fraction must be in [0, 1)")
+        if not 0 < min_batch <= max_batch or not 0 < min_anchors <= max_anchors:
+            raise ValueError("Invalid allocation limits")
         sigma = np.sqrt(max(self.cm.sigma2, 1e-8))
         m3 = max(self.cm.m3, 1e-4)
 
         c1 = 1.0 / 6.0
         c2 = 1.0
 
-        # We search over batch size B in [min_batch, max_batch]
-        # For a given B, the maximum affordable anchors is N(B) = C / (tau + kappa * B)
-        def objective(B_val: float) -> float:
-            cost_per_anchor = tau + kappa * B_val
-            N_val = min(budget_seconds / cost_per_anchor, float(max_anchors))
-            if N_val < min_anchors:
-                return 1e9
-            bias = c1 * m3 * (radius ** 3) * (N_val ** (-1.5))
-            stoch = c2 * sigma / np.sqrt(B_val)
-            return bias + stoch
+        best = None
+        for n_total in range(min_anchors, max_anchors + 1):
+            n_cert = max(int(round(n_total * self.cert_fraction)), 4)
+            n_est = n_total - n_cert
+            if n_est < 4:
+                continue
+            affordable = (budget_seconds / n_total - tau) / kappa
+            batch_size = min(max_batch, int(np.floor(affordable)))
+            while batch_size >= min_batch and n_total * (tau + kappa * batch_size) > budget_seconds:
+                batch_size -= 1
+            if batch_size < min_batch:
+                continue
+            cost = n_total * (tau + kappa * batch_size)
+            error = float(
+                c1 * m3 * radius ** 3 * n_est ** (-1.5)
+                + c2 * sigma / np.sqrt(batch_size)
+            )
+            candidate = (error, cost, n_total, n_est, n_cert, batch_size)
+            if best is None or candidate < best:
+                best = candidate
 
-        res = minimize_scalar(objective, bounds=(min_batch, max_batch), method="bounded")
-        best_B = int(np.clip(np.round(res.x), min_batch, max_batch))
+        if best is None:
+            raise ValueError("No allocation satisfies the wall-clock budget")
+        exp_err, _, best_N, n_est, n_cert, best_B = best
         cost_per_anchor = tau + kappa * best_B
-        best_N = int(np.clip(np.floor(budget_seconds / cost_per_anchor), min_anchors, max_anchors))
-
-        n_cert = int(max(np.round(best_N * self.cert_fraction), 4))
-        n_est = max(best_N - n_cert, 4)
-
-        exp_err = float(c1 * m3 * (radius ** 3) * (n_est ** (-1.5)) + c2 * sigma / np.sqrt(best_B))
 
         return OptimalAllocation(
             n_total=best_N,
@@ -84,7 +99,7 @@ class BudgetAllocator:
             n_cert=n_cert,
             batch_size=best_B,
             budget_seconds=budget_seconds,
-            expected_error=exp_err,
+            expected_error=float(exp_err),
             c_ratio=float((kappa * best_B) / cost_per_anchor)
         )
 

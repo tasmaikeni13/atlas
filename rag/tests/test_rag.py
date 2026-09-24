@@ -37,11 +37,11 @@ class TestATLASRAG(unittest.TestCase):
         self.assertGreaterEqual(top_hit["start_line"], 1)
 
     def test_paper_theory_retrieval(self):
-        results = search("Continuous Minimax Budget Allocation", category="paper", top_k=3)
+        results = search("Continuous Budget Allocation Surrogate", category="paper", top_k=3)
         self.assertTrue(len(results) > 0, "Should retrieve paper section on budget allocation")
         top_hit = results[0]
         self.assertIn("paper/atlas.tex", top_hit["rel_path"])
-        self.assertIn("Minimax Budget Allocation", top_hit["title"])
+        self.assertIn("Continuous Budget Allocation Surrogate", top_hit["title"])
 
     def test_code_ast_retrieval(self):
         results = search("HermiteTaylorReconstruction evaluate_batch", category="code", top_k=3)

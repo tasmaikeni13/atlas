@@ -1,8 +1,8 @@
-# Phase 1: Mathematical Foundations, Minimax Budget Bounds & Lean 4 Formal Verification
+# Phase 1: Mathematical Foundations, Budget Surrogate & Lean 4 Formal Verification
 
 ## 1. Executive Summary
 
-Phase 1 establishes the complete mathematical and theoretical foundation of **ATLAS** (**Adaptive Taylor Landscape Analysis System**). It establishes the formal analytical model of loss landscape reconstruction under finite wall-clock compute budgets on hardware accelerators, derives the closed-form minimax budget allocation $(N^*, B^*)$ proving the universal convergence rate $\mathcal{O}(C^{-3/8})$, formalizes the Hermite-Taylor Partition of Unity (PoU) error transfer theorem, and verifies all core theorems in the **Lean 4** interactive theorem prover with Mathlib.
+Phase 1 sets out an analytical error surrogate for ATLAS under a finite wall-clock budget. Its continuous zero-dispatch-overhead optimum scales as $C^{-3/8}$ under the stated assumptions. The Lean proof verifies that surrogate optimum and the partition-of-unity transfer inequality. A minimax lower bound on reconstruction risk has not been proved.
 
 ---
 
@@ -27,11 +27,11 @@ where $g_i = g(x_i, y_i)$, $\nabla g_i = \nabla g(x_i, y_i)$, and $H_i = \nabla^
 
 On Google Cloud TPU v4 TensorCores, ATLAS evaluates $H_i$ via **forward-over-reverse automatic differentiation**:
 $$\nabla^2 g(x, y) = \left[ \nabla(\nabla g(x, y)_1), \; \nabla(\nabla g(x, y)_2) \right]^\top.$$
-This requires exactly **two vector-Jacobian product (VJP) passes**, introducing **zero finite-difference discretization noise**.
+The implementation uses **two Jacobian-vector products (JVPs)** of a reverse-mode parameter gradient. It introduces no finite-difference discretization error on the selected batch; batch sampling error remains.
 
 ---
 
-## 3. Minimax Budget-Optimal Allocation Theory
+## 3. Budget Allocation Surrogate
 
 ### 3.1 Hardware Execution Cost Model
 Evaluating a Taylor jet on mini-batch size $B$ incurs hardware wall-clock time modeled by the affine relation:
@@ -52,17 +52,24 @@ The expected reconstruction error $E(N, B)$ over a domain of radius $R$ balances
    $$E_{\text{stoch}} \le \frac{c_2 \sigma}{\sqrt{B}},$$
    where $\sigma^2$ is the per-sample gradient variance.
 
-### 3.3 Minimax Lower Bound & Rate Optimality
+### 3.3 Optimum of the Continuous Error Surrogate
 
-**Theorem 1 (Minimax Budget Rate).**
-*Let $a = c_1 M_3 R^3$ and $b = c_2 \sigma \sqrt{\kappa / C}$. The total error bound $E(u) = a u^{-3} + b u$ (where $u = \sqrt{N}$) satisfies the universal lower bound:*
-$$\boxed{E(u) \ge 4 \left( \frac{a b^3}{27} \right)^{1/4} = 4 \left( \frac{c_1 M_3 R^3 (c_2 \sigma)^3}{27} \right)^{1/4} \left( \frac{\kappa}{C} \right)^{3/8} = \mathcal{O}(C^{-3/8})}.$$
-*Equality is uniquely attained at the optimal anchor count:*
-$$N^* = \left( \frac{3 a}{b} \right)^{1/2} = \left( \frac{3 c_1 M_3 R^3}{c_2 \sigma} \sqrt{\frac{C}{\kappa}} \right)^{1/2}, \quad B^* = \frac{C - N^* \tau}{N^* \kappa}.$$
+**Theorem 1 (Surrogate Allocation Optimum).**
+*If dispatch overhead is neglected ($\tau=0$), let $a = c_1 M_3 R^3$ and $b = c_2 \sigma \sqrt{\kappa / C}$. The continuous surrogate $E_{\mathrm{bound}}(u) = a u^{-3} + b u$ (where $u = \sqrt{N}$) satisfies:*
+$$\boxed{E_{\mathrm{bound}}(u) \ge 4 \left( \frac{a b^3}{27} \right)^{1/4} = 4 \left( \frac{c_1 M_3 R^3 (c_2 \sigma)^3}{27} \right)^{1/4} \left( \frac{\kappa}{C} \right)^{3/8}}.$$
+*Equality is uniquely attained at the continuous surrogate optimum:*
+$$N^* = \left( \frac{3 a}{b} \right)^{1/2} = \left( \frac{3 c_1 M_3 R^3}{c_2 \sigma} \sqrt{\frac{C}{\kappa}} \right)^{1/2}, \quad B^* = \frac{C}{N^* \kappa}.$$
 
 *Proof.* Apply the weighted arithmetic-geometric mean inequality to $a u^{-3} + \frac{b u}{3} + \frac{b u}{3} + \frac{b u}{3}$:
 $$a u^{-3} + b u \ge 4 \left( (a u^{-3}) \left( \frac{b u}{3} \right)^3 \right)^{1/4} = 4 \left( \frac{a b^3}{27} \right)^{1/4}.$$
 Equality holds if and only if $a u^{-3} = \frac{b u}{3}$, yielding $u^4 = \frac{3a}{b}$, or $N^* = u^2 = \sqrt{\frac{3a}{b}}$. $\blacksquare$
+
+This lower bound is on the *error surrogate*, which is itself used as an upper
+bound for reconstruction error. It is not a statistical minimax lower bound on
+any class of loss functions. With $\tau>0$, the substitution is
+$B=(C/N-\tau)/\kappa$; the displayed closed form is no longer exact. Integer
+batch and anchor limits further change the optimum. `atlas/design.py` searches
+feasible integer plans for the full affine cost model.
 
 ---
 
@@ -70,9 +77,9 @@ Equality holds if and only if $a u^{-3} = \frac{b u}{3}$, yielding $u^4 = \frac{
 
 Given $N$ anchor jets $\{(x_i, y_i, g_i, \nabla g_i, H_i)\}_{i=1}^N$, the local quadratic Taylor polynomial at anchor $i$ is:
 $$Q_i(x, y) = g_i + \nabla g_i^\top \Delta_i + \frac{1}{2} \Delta_i^\top H_i \Delta_i, \quad \Delta_i = [x - x_i, \; y - y_i]^\top.$$
-ATLAS blends these local quadratic patches into a global $C^1$ smooth surface using compactly supported Wendland radial basis functions:
-$$\hat{\mathcal{L}}(x, y) = \sum_{i=1}^N w_i(x, y) Q_i(x, y), \quad w_i(x, y) = \frac{\phi(\| (x, y) - (x_i, y_i) \| / r_i)}{\sum_{j=1}^N \phi(\| (x, y) - (x_j, y_j) \| / r_j)},$$
-where $\phi(r) = (1 - r)_+^4 (4r + 1)$ is Wendland's $C^2$ compactly supported kernel.
+ATLAS currently blends these local quadratic patches into a smooth surface using inverse-distance Shepard weights:
+$$\hat{\mathcal{L}}(q) = \sum_{i=1}^N w_i(q) Q_i(q), \quad w_i(q) = \frac{\phi_i(q)}{\sum_{j=1}^N \phi_j(q)}, \quad \phi_i(q) = \left(\frac{\|q-q_i\|^2}{r_i^2}+\epsilon^2\right)^{-p/2}.$$
+The positive denominator makes the weights smooth and sum to one. Compact Wendland support is a future ablation target; it is not the kernel used for the archived results.
 
 **Theorem 2 (Global PoU Error Transfer).**
 *Let $w_i(x, y) \ge 0$ with $\sum_{i=1}^N w_i(x, y) = 1$. If each active local Taylor polynomial satisfies $|g(x, y) - Q_i(x, y)| \le \epsilon$, then the global reconstructed surface satisfies:*
@@ -86,7 +93,7 @@ $$|g(x, y) - \hat{\mathcal{L}}(x, y)| \le \epsilon.$$
 All foundational theorems of ATLAS are formalized and machine-checked in Lean 4 without axioms or `sorries`. The proof suite is located in [`proofs/AtlasCert/AtlasCert/Certificates.lean`](file:///home/tasma/atlas/proofs/AtlasCert/AtlasCert/Certificates.lean):
 
 ```lean
--- 1. Minimax lower bound under budget constraint
+-- 1. Lower bound for the continuous error surrogate
 theorem alloc_lower_bound {a b u : ℝ} (ha : 0 < a) (hb : 0 < b) (hu : 0 < u) :
     4 * (a * b ^ 3 / 27) ^ ((1 : ℝ) / 4) ≤ a / u ^ 3 + b * u
 
@@ -116,10 +123,10 @@ theorem debias_unbiased {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Convergence Rate wrt Budget $C$** | **$\mathcal{O}(C^{-3/8})$** | $\mathcal{O}(C^{-1/4})$ | $\mathcal{O}(1)$ (does not converge) | N/A (pointwise only) | $\mathcal{O}(C^{-1/6})$ |
 | **Subspace Realism** | **Optimal PCA ($\ge 85\%$ capture)** | Optimal PCA | Random Plane ($<1\%$ capture) | Pointwise extremum | N/A |
-| **Hessian Extraction Method** | **Exact Autodiff (2 VJPs)** | Discrete Spline Curvature | None | $2m$ sequential VJPs ($m \ge 20$) | Central Difference ($h^{-2}$ noise) |
+| **Hessian Extraction Method** | **Autodiff (2 JVPs of reverse gradient)** | Discrete Spline Curvature | None | Iterative Hessian-vector products | Central Difference ($h^{-2}$ independent-noise scaling) |
 | **Curvature Noise Variance** | **$\mathbf{0}$ (Exact)** | Discretization error | Undefined | Spectral noise $\mathcal{O}(1/\sqrt{m})$ | $\mathcal{O}(\sigma^2 / (B h^4))$ (Explosive) |
 | **Global Smoothness** | **$C^1$ Guaranteed** | $C^0$ / $C^2$ Spline oscillations | N/A | N/A | Discontinuous |
-| **Statistical Certification** | **Exact DKW Bounds** | None (heuristic residuals) | None | None | None |
+| **Statistical Certification** | Conditional fixed-batch DKW bound when iid holdouts and sample size suffice | None (heuristic residuals) | None | None | None |
 
 ---
 

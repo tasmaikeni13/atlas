@@ -33,7 +33,7 @@ class SurfaceAnalysis:
 
 
 class HermiteTaylorReconstruction:
-    """Synthesizes a continuous, smooth C^1 loss surface from discrete 2nd-order Taylor jets.
+    """Synthesizes a smooth loss surface from discrete 2nd-order Taylor jets.
     
     Combines local quadratic Taylor models via a partition of unity with smooth blending kernels.
     """
@@ -41,6 +41,8 @@ class HermiteTaylorReconstruction:
     def __init__(self, jets: Sequence[Jet], p_power: float = 3.0, eps: float = 1e-4):
         self.jets = list(jets)
         assert len(self.jets) >= 1, "Must provide at least 1 Jet for reconstruction"
+        if p_power <= 0 or eps <= 0:
+            raise ValueError("p_power and eps must be positive")
         self.anchor_coords = np.array([[j.x, j.y] for j in self.jets], dtype=np.float64)  # (N, 2)
         self.p_power = p_power
         self.eps = eps
@@ -68,8 +70,6 @@ class HermiteTaylorReconstruction:
         # Distances from each query point to each anchor: (M, N)
         diff = query_points[:, None, :] - self.anchor_coords[None, :, :]  # (M, N, 2)
         dist_sq = np.sum(diff ** 2, axis=-1)  # (M, N)
-        dist = np.sqrt(dist_sq)
-
         # Evaluate local Taylor polynomials P_k(q) for all (M, N)
         poly_vals = np.zeros((M, N), dtype=np.float64)
         for k, jet in enumerate(self.jets):
@@ -79,19 +79,11 @@ class HermiteTaylorReconstruction:
             quad = 0.5 * (jet.hess[0, 0] * (dx ** 2) + 2.0 * jet.hess[0, 1] * dx * dy + jet.hess[1, 1] * (dy ** 2))
             poly_vals[:, k] = jet.loss + lin + quad
 
-        # Adaptive smooth Wendland/Shepard kernel weights
+        # Smooth inverse-distance Shepard weights (not compactly supported).
         scaled_dist_sq = dist_sq / (self.radii[None, :] ** 2)
-        weights = 1.0 / (scaled_dist_sq + self.eps ** 2) ** (self.p_power / 2.0)  # (M, N)
-
-        # Exact anchor interpolation check: if query coincides with anchor, weight = 1
-        is_exact = dist < 1e-7
-        exact_rows, exact_cols = np.where(is_exact)
-        if len(exact_rows) > 0:
-            weights[exact_rows, :] = 0.0
-            weights[exact_rows, exact_cols] = 1.0
-
-        weight_sum = np.sum(weights, axis=1, keepdims=True)
-        norm_weights = weights / (weight_sum + 1e-12)
+        log_weights = -0.5 * self.p_power * np.log(scaled_dist_sq + self.eps ** 2)
+        weights = np.exp(log_weights - np.max(log_weights, axis=1, keepdims=True))
+        norm_weights = weights / np.sum(weights, axis=1, keepdims=True)
 
         pred_losses = np.sum(norm_weights * poly_vals, axis=1)
         return pred_losses

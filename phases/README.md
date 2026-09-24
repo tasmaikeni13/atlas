@@ -79,7 +79,7 @@ If existing theory is violated or unachievable:
 #### Step 5: TPU Kernel & Algorithm Re-implementation
 - Update the JAX/XLA implementations in `atlas/`:
   - Adjust anchor allocation in `atlas/design.py`.
-  - Refine exact forward-over-reverse autodiff VJP routines in `atlas/probe.py`.
+  - Refine forward-over-reverse JVP routines in `atlas/probe.py`.
   - Optimize Wendland radial basis partition of unity in `atlas/reconstruct.py`.
   - Update DKW statistical certifier in `atlas/certify.py`.
 - Ensure kernels remain fully vectorized, JIT-compiled, and TPU TensorCore native.
@@ -153,20 +153,20 @@ To be publishable in top-tier machine learning venues (NeurIPS, ICML, ICLR, JMLR
 ### 1. Vectorized TPU Grid Baseline (`VectorizedGridBaseline` + Bivariate Spline)
 - **Error Invariant:** ATLAS relative $L_2$ error must be at least **$3\times$ to $7\times$ lower** than the Uniform Grid at equal wall-clock budget.
 - **Topological Invariant:** ATLAS Spearman rank correlation $\rho_s$ must be $\ge 0.995$ across all budgets.
-- **Computational Scaling Invariant:** ATLAS error scales as $\mathcal{O}(C^{-3/8})$, whereas Uniform Grid scales as $\mathcal{O}(C^{-1/4})$ or worse due to uniform spacing overhead.
+- **Computational Scaling Target:** Test the conditional $C^{-3/8}$ surrogate prediction across uncapped budgets. A minimax risk comparison with grids remains unproved.
 
 ### 2. Filter-Normalized Random 2D Slice (`FilterNormalizedRandomSlice`, Li et al., 2018)
 - **Topological Invariant:** ATLAS must achieve $\rho_s > 0.990$, whereas Random Slices fail with $\rho_s \le 0.20$ (often negative, $\rho_s \in [-0.75, 0.0]$), proving that random slices invert true optimization topography.
 - **Subspace Capture Invariant:** ATLAS PCA subspace capture ratio must exceed **$85\%$** of trajectory Frobenius energy; Random Slices capture $<1\%$.
 
 ### 3. Central Finite Difference Curvature (`TpuFiniteDifferenceCurvature`)
-- **Noise Explosion Invariant:** ATLAS curvature relative error must remain **$<1.0\%$** across all scales, whereas finite differences detonate as $\mathcal{O}(h^{-2})$ on mini-batches, inflating condition numbers by **$11\times$ to $15\times$**.
+- **Noise Scaling Target:** Under independent mini-batch observations, test the predicted $h^{-2}$ finite-difference standard-error scaling. The archived same-batch audit does not show 11--15-fold inflation.
 
 ### 4. TPU Lanczos Hessian (`TpuLanczosHessian` / PyHessian)
-- **Efficiency Invariant:** ATLAS extracts the exact projected 2D Hessian $H_{2\times 2} = \Pi^\top \nabla^2 \mathcal{L} \Pi$ in **2 VJP passes**, whereas full Lanczos requires $2m$ sequential VJPs ($m \ge 20$) per anchor, incurring $>10\times$ higher compute cost.
+- **Efficiency Target:** ATLAS computes the selected-batch projected $2\times2$ Hessian with two JVPs of a reverse gradient. Full-space Lanczos needs repeated Hessian-vector products; an equal-task timing comparison remains to be measured.
 
 ### 5. Hutchinson Stochastic Trace (`TpuHutchinsonTrace`)
-- **Variance Invariant:** For projected 2D subspace diagnostics, ATLAS exact jets exhibit **zero stochastic estimation variance** on evaluated batches, whereas Hutchinson estimators require large sample counts $N_v \ge 50$ to converge.
+- **Variance Interpretation:** ATLAS has no random-vector approximation conditional on a fixed batch. Mini-batch Hessians still have sampling variance, and the Hutchinson baseline estimates a different full-space quantity.
 
 ### 6. Hyperparameter Sweep Baselines (`RandomSearchHPO`, `OptunaTPEBaseline`, `ASHABaseline`)
 - **Sample Efficiency Invariant:** ATLAS Curvature-Guided Sweep Advisor requires $\le 15$ exploratory probe steps to synthesize optimal stable learning rates ($\eta^* = \frac{2}{\lambda_{\max}} \times \gamma_{\text{opt}}$), achieving target loss with $\ge \mathbf{2.5\times}$ fewer total training steps than Optuna TPE or Random Search.
@@ -218,3 +218,7 @@ Phase execution status is tracked in `phases/state.json` with the following life
 - `VERIFYING`: Smoke tests, benchmarks, or formal proofs being evaluated.
 - `ADAPTIVE_CORRECTION`: Failure detected; agent actively researching literature, revising math, and re-running.
 - `COMPLETED`: All success criteria, invariants, and peer-domination checks verified and passed.
+
+The original runner's artifact checks do not establish the listed scientific
+criteria. See `evidence_audit.md` for the current evidence gaps before treating
+any `COMPLETED` flag as a research result.

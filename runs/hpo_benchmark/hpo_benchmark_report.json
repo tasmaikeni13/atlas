@@ -35,5 +35,11 @@
       "time_seconds": 27.76780605316162
     }
   },
-  "budget_steps": 16
+  "budget_steps": 16,
+  "comparison_valid": false,
+  "comparison_limitations": [
+    "Final losses are measured after different per-trial training horizons.",
+    "One seed and no divergent peer trial cannot establish a speedup or prevention rate.",
+    "The OptunaTPEBaseline is a local TPE-style surrogate, not the Optuna package."
+  ]
 }

@@ -61,7 +61,7 @@ def render_landscape_2d(
         ax.scatter(
             cert_points[:, 0], cert_points[:, 1],
             c=CERT_COLOR, s=32, marker="^", edgecolors="black", linewidths=0.5,
-            label=f"Cert Holdouts (M={len(cert_points)})", zorder=4
+            label=f"Holdouts (M={len(cert_points)})", zorder=4
         )
 
     # Plot Optimizer Trajectory
@@ -89,11 +89,17 @@ def render_landscape_2d(
 
     # Add error certificate annotation badge
     if certificate is not None:
-        badge_text = (
-            f"Certified Accuracy (95% coverage):\n"
-            f"Error bound: +/-{certificate.q95_upper_bound:.4f} ({certificate.relative_q95_error_pct:.1f}% relief)\n"
-            f"Confidence: {certificate.confidence_level*100:.0f}% | Holdouts: M={certificate.num_cert_points}"
-        )
+        if certificate.certified_valid:
+            badge_text = (
+                f"Fixed-batch 95% domain error bound: +/-{certificate.q95_upper_bound:.4f}\n"
+                f"Confidence: {certificate.confidence_level*100:.0f}% | "
+                f"Holdouts: M={certificate.num_cert_points}"
+            )
+        else:
+            badge_text = (
+                f"Empirical holdout q95: {certificate.q95_error:.4f}\n"
+                f"95% domain certificate unavailable | M={certificate.num_cert_points}"
+            )
         ax.text(
             0.03, 0.04, badge_text,
             transform=ax.transAxes, fontsize=8.5,
@@ -186,16 +192,25 @@ def render_certificate_plot(
     eps_dkw = np.sqrt(np.log(2.0 / alpha) / (2.0 * N))
     ecdf_lower = np.maximum(ecdf - eps_dkw, 0.0)
     ecdf_upper = np.minimum(ecdf + eps_dkw, 1.0)
-    ax.fill_between(sorted_res, ecdf_lower, ecdf_upper, color="#3A86FF", alpha=0.2, label=f"DKW Band ({certificate.confidence_level*100:.0f}% Conf)")
+    if certificate.sampling == "iid uniform":
+        ax.fill_between(
+            sorted_res, ecdf_lower, ecdf_upper, color="#3A86FF", alpha=0.2,
+            label=f"DKW Band ({certificate.confidence_level*100:.0f}% Conf)",
+        )
 
     # 95% threshold line
     ax.axhline(0.95, color="#EF476F", linestyle="--", linewidth=1.2, label="95% Coverage Target")
-    ax.axvline(certificate.q95_upper_bound, color="#06D6A0", linestyle="-.", linewidth=1.5,
-               label=f"Cert Bound $\\epsilon_{{95}} = {certificate.q95_upper_bound:.4f}$")
+    if certificate.certified_valid:
+        ax.axvline(certificate.q95_upper_bound, color="#06D6A0", linestyle="-.", linewidth=1.5,
+                   label=f"Fixed-batch 95% bound = {certificate.q95_upper_bound:.4f}")
+    else:
+        ax.axvline(certificate.q95_error, color="#06D6A0", linestyle="-.", linewidth=1.5,
+                   label=f"Empirical holdout q95 = {certificate.q95_error:.4f}")
 
-    ax.set_xlabel("Reconstruction Error Residual $|\\widehat{L}(z) - L_{{\\mathrm{{true}}}}(z)|$", weight="bold")
+    ax.set_xlabel("Fixed-batch reconstruction residual", weight="bold")
     ax.set_ylabel("Cumulative Probability", weight="bold")
-    ax.set_title(f"ATLAS Statistical Error Certificate (Holdout M={N})", weight="bold")
+    title = "ATLAS Fixed-Batch Error Certificate" if certificate.certified_valid else "ATLAS Holdout Errors (No 95% Certificate)"
+    ax.set_title(f"{title} (M={N})", weight="bold")
     ax.legend(loc="lower right", framealpha=0.9)
     ax.grid(True, linestyle=":", alpha=0.5)
 

@@ -10,7 +10,10 @@
     "confidence_level": 0.95,
     "surface_relief": 2.2215222541393427,
     "relative_q95_error_pct": 1.984164418164329,
-    "certified_valid": true
+    "certified_valid": false,
+    "coverage_lower_bound": 0.0,
+    "sampling": "deterministic Halton (non-IID)",
+    "target": "fixed evaluation-batch loss"
   },
   "allocation": {
     "n_total": 80,
