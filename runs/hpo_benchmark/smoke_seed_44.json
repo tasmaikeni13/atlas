@@ -30,7 +30,9 @@
         "recommended_lr": 0.0007499999999999999,
         "recommended_weight_decay": 0.01,
         "recommended_batch_scale": 0.5,
-        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 2864.10 >> 2.0). Landscape can tolerate up to 7.5e-04 with lambda_max = 2.3277. High gradient SNR (983.4). Batch size can be halved to economize TPU compute without loss."
+        "summary": "\ud83d\udc22 UNDERFIT WARNING: Learning rate is overly conservative (EoS margin = 2864.10 >> 2.0). Landscape can tolerate up to 7.5e-04 with lambda_max = 2.3277. High gradient SNR (983.4). Batch size can be halved to economize TPU compute without loss.",
+        "stochastic_snr_valid": false,
+        "stochastic_snr_warning": "Legacy SNR used a fixed placeholder instead of measured projected-gradient noise; noise-based batch advice is unsupported."
       },
       "directional_profile": {
         "slope_per_last_update": 0.016959350556135178,

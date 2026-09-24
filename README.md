@@ -291,7 +291,7 @@ ATLAS extracts exact projected second-order geometric diagnostics to guide hyper
 1. **Projected curvature margin ($\mu_{\text{EoS}} = \frac{2}{\eta \lambda_{\max}}$):** A local heuristic based on the largest eigenvalue of the two-dimensional projected Hessian when that eigenvalue is positive. It does not certify stability of AdamW or the full model.
 2. **Projected conditioning:** Summarizes anisotropy in the selected two-dimensional plane. Its relationship to optimizer stability and weight decay needs empirical validation.
 3. **Local flatness radius:** Uses a quadratic approximation when projected curvature is positive. It is not a measured out-of-distribution generalization score.
-4. **Stochastic SNR:** Compares projected gradient magnitude with an assumed noise scale. The default scale is a placeholder unless supplied by a fitted cost model.
+4. **Stochastic SNR:** Compares projected gradient magnitude with projected-gradient noise measured across independent calibration batches. Without that estimate, SNR is unavailable and no noise-based batch advice is issued. Scalar-loss variance is used only for the allocation surrogate.
 
 ```bash
 # Run automated 6-stage smoke test on ViT architecture and sweep advisor:

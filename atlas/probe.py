@@ -55,6 +55,7 @@ class CostModel:
     sigma2: float    # Estimated per-example scalar-loss variance proxy
     m3: float        # Empirical radial Hessian-slope proxy, not a global bound
     loss_relief: float  # Observed surface dynamic range max(L) - min(L)
+    gradient_sigma2: Optional[float] = None  # Projected gradient variance proxy
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -63,6 +64,10 @@ class CostModel:
             "sigma2": float(self.sigma2),
             "m3": float(self.m3),
             "loss_relief": float(self.loss_relief),
+            "gradient_sigma2": (
+                None if self.gradient_sigma2 is None
+                else float(self.gradient_sigma2)
+            ),
         }
 
 
@@ -222,10 +227,10 @@ class JetProbe:
 
         # Estimate per-example scalar-loss variance from heterogeneous batch
         # means: Var(L_B) = sigma2 / B for independent examples.
-        losses = np.array(
-            [self.evaluate_loss(0.0, 0.0, b) for b in sample_batches],
-            dtype=np.float64,
-        )
+        origin_jets = [
+            self.evaluate_jet(0.0, 0.0, batch) for batch in sample_batches
+        ]
+        losses = np.array([jet.loss for jet in origin_jets], dtype=np.float64)
         weights = np.asarray(batch_sizes, dtype=np.float64)
         mean_loss = float(np.average(losses, weights=weights))
         sigma2 = float(
@@ -234,11 +239,25 @@ class JetProbe:
         if not np.isfinite(sigma2):
             raise ValueError("Batch loss variance is not finite")
 
+        # A separate projected-gradient variance proxy is needed for SNR
+        # advice; scalar-loss variance cannot stand in for gradient noise.
+        gradients = np.stack(
+            [np.asarray(jet.grad, dtype=np.float64) for jet in origin_jets]
+        )
+        mean_gradient = np.average(gradients, axis=0, weights=weights)
+        gradient_sigma2 = float(
+            np.sum(
+                weights[:, None] * (gradients - mean_gradient) ** 2
+            ) / (len(origin_jets) - 1)
+        )
+        if not np.isfinite(gradient_sigma2):
+            raise ValueError("Projected gradient variance is not finite")
+
         # Measure radial change of the Hessian on one fixed batch.
         h = 0.1 * radius
         j_pos = self.evaluate_jet(h, 0.0, sample_batches[0])
         j_neg = self.evaluate_jet(-h, 0.0, sample_batches[0])
-        j_zero = self.evaluate_jet(0.0, 0.0, sample_batches[0])
+        j_zero = origin_jets[0]
         diff_h = np.linalg.norm(j_pos.hess - j_neg.hess) / (2.0 * h + 1e-12)
         m3 = float(diff_h)
 
@@ -254,5 +273,6 @@ class JetProbe:
             kappa=kappa,
             sigma2=sigma2,
             m3=m3,
-            loss_relief=relief
+            loss_relief=relief,
+            gradient_sigma2=gradient_sigma2,
         )

@@ -36,15 +36,15 @@ class CalibrationTests(unittest.TestCase):
             )
 
         def fake_eval_jet(x, y, batch):
+            size = batch.shape[0]
             return Jet(
-                x=x, y=y, loss=(x - 1.0) ** 2,
-                grad=np.zeros(2),
+                x=x, y=y,
+                loss={4: 1.0, 8: 2.0, 12: 4.0}[size] + (x - 1.0) ** 2,
+                grad=np.array([size / 4.0, 0.0]),
                 hess=np.diag([2.0 + 6.0 * x, 1.0]),
             )
 
-        losses = {4: 1.0, 8: 2.0, 12: 4.0}
         self.probe._jit_jet = fake_jet
-        self.probe.evaluate_loss = lambda x, y, batch: losses[batch.shape[0]]
         self.probe.evaluate_jet = fake_eval_jet
         self.batches = [jnp.zeros((size,)) for size in (4, 8, 12)]
 
@@ -57,6 +57,7 @@ class CalibrationTests(unittest.TestCase):
         self.assertAlmostEqual(cost.m3, 6.0, places=5)
         self.assertAlmostEqual(cost.loss_relief, 0.4, places=5)
         self.assertAlmostEqual(cost.sigma2, 17.6666666667, places=5)
+        self.assertAlmostEqual(cost.gradient_sigma2, 6.6666666667, places=5)
 
     def test_rejects_mismatched_batch_metadata(self):
         with self.assertRaises(ValueError):

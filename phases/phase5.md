@@ -33,9 +33,8 @@ $$R_{\text{flat}} = \sqrt{\frac{2 \Delta \mathcal{L}}{\lambda_{\max}(H)}}.$$
 - Wider basins ($R_{\text{flat}} \gg 1.0$) correlate strongly with superior out-of-distribution (OOD) generalization and flatter minima (Keskar et al., 2017; Foret et al., 2020).
 
 ### 2.4 Stochastic Gradient Signal-to-Noise Ratio (SNR)
-$$\mathrm{SNR} = \frac{\|\nabla \mathcal{L}\|^2}{\sigma^2 / B}.$$
-- If $\mathrm{SNR} \gg 10$: Gradient signal dominates; mini-batch size $B$ can be halved to conserve compute.
-- If $\mathrm{SNR} < 1$: Gradient noise dominates drift; batch size $B$ must be increased or gradient accumulation applied.
+$$\mathrm{SNR}_{\Pi} = \frac{\|\Pi^\top \nabla \mathcal{L}\|^2}{\sigma_{\nabla,\Pi}^2 / B}.$$
+The implementation estimates projected-gradient noise from independent calibration batches. Scalar-loss variance does not measure gradient noise. Without a positive measured gradient-noise scale, SNR is unavailable and the advisor issues no noise-based batch-size recommendation. High or low measured SNR motivates a batch-size experiment; it does not establish that the proposed change will improve validation loss.
 
 ---
 

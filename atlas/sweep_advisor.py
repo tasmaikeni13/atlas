@@ -59,7 +59,7 @@ class LandscapeDiagnostics:
     anisotropy_ratio: float
     flatness_radius: float       # Radius r where loss rises by delta_L = 0.1
     eos_margin: float            # 2.0 / (lr * lambda_max)
-    stochastic_snr: float        # ||grad||^2 / (sigma^2 / B)
+    stochastic_snr: Optional[float]  # Projected-gradient SNR if measured
     stability_verdict: str       # OPTIMAL_EDGE, OSCILLATING_UNSTABLE, SLUGGISH_UNDERFIT, ILL_CONDITIONED
     recommended_lr: float
     recommended_weight_decay: float
@@ -76,7 +76,10 @@ class LandscapeDiagnostics:
             "anisotropy_ratio": float(self.anisotropy_ratio),
             "flatness_radius": float(self.flatness_radius),
             "eos_margin": float(self.eos_margin),
-            "stochastic_snr": float(self.stochastic_snr),
+            "stochastic_snr": (
+                None if self.stochastic_snr is None
+                else float(self.stochastic_snr)
+            ),
             "stability_verdict": self.stability_verdict,
             "recommended_lr": float(self.recommended_lr),
             "recommended_weight_decay": float(self.recommended_weight_decay),
@@ -145,10 +148,15 @@ class LandscapeDiagnosticEngine:
         else:
             eos_margin = 100.0
 
-        # Stochastic Signal-to-Noise Ratio: ||grad||^2 / (sigma^2 / B)
-        sigma2 = cost_model.sigma2 if cost_model is not None else 1e-3
-        denom = max(sigma2 / max(self.batch_size, 1), 1e-8)
-        snr = float((grad_norm ** 2) / denom)
+        # Scalar-loss noise does not estimate projected-gradient noise.
+        gradient_sigma2 = (
+            cost_model.gradient_sigma2 if cost_model is not None else None
+        )
+        snr = None
+        if (gradient_sigma2 is not None and np.isfinite(gradient_sigma2)
+                and gradient_sigma2 > 0):
+            denom = gradient_sigma2 / max(self.batch_size, 1)
+            snr = float((grad_norm ** 2) / denom)
 
         # Formulate Educated Diagnoses & Next Sweep Recommendations
         # 1. Stability Verdict
@@ -192,12 +200,12 @@ class LandscapeDiagnosticEngine:
             )
 
         # 3. Batch Size Guidance
-        if snr < 0.2:
+        if snr is not None and snr < 0.2:
             rec_b_scale = max(rec_b_scale, 2.0)
-            summary += f" Stochastic gradient noise dominates descent (SNR = {snr:.2f} < 0.2). Increase batch size by 2x."
-        elif snr > 15.0 and rec_b_scale == 1.0:
+            summary += f" Projected gradient noise dominates descent (SNR = {snr:.2f} < 0.2). Increase batch size by 2x."
+        elif snr is not None and snr > 15.0 and rec_b_scale == 1.0:
             rec_b_scale = 0.5
-            summary += f" High gradient SNR ({snr:.1f}). Batch size can be halved to economize TPU compute without loss."
+            summary += f" High projected gradient SNR ({snr:.1f}). A smaller batch is worth testing."
 
         return LandscapeDiagnostics(
             loss=loss,

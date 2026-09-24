@@ -46,6 +46,11 @@ The raw reports are in runs/hpo_benchmark/hpo_benchmark_report.json,
 runs/hpo_benchmark/smoke_seed_43.json, and
 runs/hpo_benchmark/smoke_seed_44.json.
 
+These archived smoke runs did not calibrate projected-gradient noise. Their
+reported stochastic SNR and noise-based batch-size advice came from a fixed
+placeholder and are marked invalid in the JSON reports. The current advisor
+leaves SNR unavailable without a measured gradient-noise scale.
+
 Each row is a 16-step CPU smoke comparison with one held-out final batch.
 The ranking changes by seed; ATLAS does not dominate all peers. The color
 task is deliberately simple and does not establish performance on real data.
